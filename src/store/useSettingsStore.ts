@@ -1,0 +1,44 @@
+import { create } from "zustand";
+import { getAllSettings, setSetting } from "../lib/db";
+
+interface Settings {
+  expected_hours_per_day: number;
+  week_starts_on: number;
+}
+
+interface SettingsState {
+  settings: Settings;
+  loaded: boolean;
+  load: () => Promise<void>;
+  update: (key: keyof Settings, value: number) => Promise<void>;
+}
+
+const defaults: Settings = {
+  expected_hours_per_day: 7.5,
+  week_starts_on: 1,
+};
+
+export const useSettingsStore = create<SettingsState>((set) => ({
+  settings: defaults,
+  loaded: false,
+
+  load: async () => {
+    const raw = await getAllSettings();
+    set({
+      settings: {
+        expected_hours_per_day: raw.expected_hours_per_day
+          ? parseFloat(raw.expected_hours_per_day)
+          : defaults.expected_hours_per_day,
+        week_starts_on: raw.week_starts_on
+          ? parseInt(raw.week_starts_on, 10)
+          : defaults.week_starts_on,
+      },
+      loaded: true,
+    });
+  },
+
+  update: async (key, value) => {
+    await setSetting(key, String(value));
+    set((state) => ({ settings: { ...state.settings, [key]: value } }));
+  },
+}));
