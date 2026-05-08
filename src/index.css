@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* Print view is always in the DOM; CSS controls visibility */
+@media screen {
+  #print-view {
+    display: none;
+  }
+}
+
+@media print {
+  #app-shell {
+    display: none !important;
+  }
+
+  #print-view {
+    display: block;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+}
