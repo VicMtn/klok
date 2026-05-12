@@ -22,6 +22,11 @@ export function TotalsRow({ entries, expectedHoursPerDay, colSpan = 5 }: Props) 
           {total > 0 ? formatDecimalHours(total) : "—"}
         </span>
       </td>
+      <td className="px-3 py-2 text-right">
+        <span className="text-sm font-mono font-semibold text-gray-500">
+          {total > 0 ? total.toFixed(2) : "—"}
+        </span>
+      </td>
       <td className="px-3 py-2">
         {total > 0 && (
           <span

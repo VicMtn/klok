@@ -4,7 +4,7 @@ import { TotalsRow } from "./TotalsRow";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 
-const HEADERS = ["Jour", "Arrivée", "Pause →", "← Retour", "Départ", "Temps net", "Note"];
+const HEADERS = ["Jour", "Arrivée", "Pause →", "← Retour", "Départ", "Temps net", "Décimal", "Note"];
 
 export function MonthTable({ dates }: { dates: string[] }) {
   const entriesMap = useEntriesStore((s) => s.entries);

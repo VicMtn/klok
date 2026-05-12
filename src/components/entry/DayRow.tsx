@@ -3,6 +3,7 @@ import { CommentInput } from "./CommentInput";
 import { DayTotal } from "./DayTotal";
 import { validateEntrySequence } from "../../lib/validation";
 import { getDayName, formatDisplayDate, today } from "../../lib/dateUtils";
+import { calculateDay } from "../../lib/calculations";
 import type { TimeEntry } from "../../types/entry";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
@@ -22,6 +23,7 @@ export function DayRow({ date }: { date: string }) {
   };
 
   const warnings = new Set(validateEntrySequence(e).map((w) => w.field));
+  const { netDecimal, isComplete } = calculateDay(e);
   const isToday = date === today();
   const dow = new Date(date + "T00:00:00").getDay();
   const isWeekend = dow === 0 || dow === 6;
@@ -64,6 +66,12 @@ export function DayRow({ date }: { date: string }) {
       </td>
       <td className="px-3 py-2 text-right">
         <DayTotal entry={e} expectedHours={expectedHours} />
+      </td>
+      <td className="px-3 py-2 text-right">
+        {isComplete
+          ? <span className="text-sm font-mono text-gray-500">{netDecimal.toFixed(2)}</span>
+          : <span className="text-gray-300 text-sm font-mono">—</span>
+        }
       </td>
       <td className="px-3 py-2 min-w-32">
         <CommentInput value={e.comment} onChange={handle("comment")} />

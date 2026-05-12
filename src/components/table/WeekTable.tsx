@@ -5,7 +5,7 @@ import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import type { TimeEntry } from "../../types/entry";
 
-const HEADERS = ["Jour", "Arrivée", "Pause →", "← Retour", "Départ", "Temps net", "Note"];
+const HEADERS = ["Jour", "Arrivée", "Pause →", "← Retour", "Départ", "Temps net", "Décimal", "Note"];
 
 export function WeekTable({ dates }: { dates: string[] }) {
   const entriesMap = useEntriesStore((s) => s.entries);
