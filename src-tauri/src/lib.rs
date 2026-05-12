@@ -4,6 +4,16 @@ use tauri::{
 };
 use tauri_plugin_sql::{Migration, MigrationKind};
 
+/// Load the tray icon from bytes pre-decoded by build.rs.
+/// include_bytes! registers the generated file as a rustc dependency, so
+/// editing icons/32x32.png triggers a recompile automatically.
+fn tray_icon() -> tauri::image::Image<'static> {
+    const DATA: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/tray_icon.bin"));
+    let width = u32::from_le_bytes(DATA[0..4].try_into().unwrap());
+    let height = u32::from_le_bytes(DATA[4..8].try_into().unwrap());
+    tauri::image::Image::new_owned(DATA[8..].to_vec(), width, height)
+}
+
 // ─── Tauri commands ───────────────────────────────────────────────────────────
 
 #[tauri::command]
@@ -81,7 +91,7 @@ pub fn run() {
         )
         .invoke_handler(tauri::generate_handler![print, update_tray])
         .setup(|app| {
-            let icon = tauri::include_image!("icons/32x32.png");
+            let icon = tray_icon();
             let handle = app.handle().clone();
 
             let menu =
