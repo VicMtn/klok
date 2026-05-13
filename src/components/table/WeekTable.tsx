@@ -5,7 +5,17 @@ import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import type { TimeEntry } from "../../types/entry";
 
-const HEADERS = ["Jour", "Arrivée", "Pause →", "← Retour", "Départ", "Temps net", "Décimal", "Note"];
+const HEADERS: { label: string; align: string }[] = [
+  { label: "Jour",        align: "text-left"   },
+  { label: "Arrivée",    align: "text-center"  },
+  { label: "Pause →",    align: "text-center"  },
+  { label: "Durée pause", align: "text-center" },
+  { label: "← Retour",   align: "text-center"  },
+  { label: "Départ",     align: "text-center"  },
+  { label: "Temps net",  align: "text-right"   },
+  { label: "Décimal",    align: "text-right"   },
+  { label: "Note",       align: "text-left"    },
+];
 
 export function WeekTable({ dates }: { dates: string[] }) {
   const entriesMap = useEntriesStore((s) => s.entries);
@@ -23,12 +33,12 @@ export function WeekTable({ dates }: { dates: string[] }) {
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="border-b-2 border-gray-200 bg-gray-50/80">
-            {HEADERS.map((h) => (
+            {HEADERS.map(({ label, align }) => (
               <th
-                key={h}
-                className="px-3 py-2 text-xs text-gray-500 font-semibold uppercase tracking-wide whitespace-nowrap"
+                key={label}
+                className={`px-3 py-2 text-xs text-gray-500 font-semibold uppercase tracking-wide whitespace-nowrap ${align}`}
               >
-                {h}
+                {label}
               </th>
             ))}
           </tr>
@@ -42,7 +52,7 @@ export function WeekTable({ dates }: { dates: string[] }) {
           <TotalsRow
             entries={entries}
             expectedHoursPerDay={expectedHoursPerDay}
-            colSpan={5}
+            colSpan={6}
           />
         </tfoot>
       </table>
