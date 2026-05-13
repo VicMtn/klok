@@ -25,7 +25,12 @@ export function WeekView({ year, week, onNavigate }: Props) {
   const setPrint = usePrintStore((s) => s.setPrint);
 
   const dates = useMemo(() => getISOWeekDates(year, week), [year, week]);
-  const title = `Semaine ${week} — ${year}`;
+  const monthLabel = useMemo(() => {
+    const d = new Date(dates[0] + "T00:00:00");
+    const m = d.toLocaleDateString("fr-FR", { month: "long" });
+    return m.charAt(0).toUpperCase() + m.slice(1) + " " + d.getFullYear();
+  }, [dates]);
+  const title = `${monthLabel} — Semaine ${week}`;
   const prev = prevWeek(year, week);
   const next = nextWeek(year, week);
 
@@ -59,7 +64,17 @@ export function WeekView({ year, week, onNavigate }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <Header title={title} onPrint={() => invoke("print")} />
+      <Header
+        title={
+          <>
+            {monthLabel}
+            <span className="text-s font-medium text-gray-400 px-2 py-0.5 rounded-full">
+              Semaine : {week}
+            </span>
+          </>
+        }
+        onPrint={() => invoke("print")}
+      />
       <div className="flex items-center gap-1 px-5 py-2 border-b border-gray-100 bg-white shrink-0">
         <button
           onClick={() => onNavigate(prev.year, prev.week)}
