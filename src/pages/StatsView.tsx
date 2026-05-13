@@ -51,7 +51,7 @@ export function StatsView() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header title={`Statistiques ${year}`} />
+      <Header title={`Statistiques ${year}`} hideBadge />
       <div className="flex-1 overflow-auto p-5 space-y-5">
 
         <div className="grid grid-cols-4 gap-4">
