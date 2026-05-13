@@ -29,14 +29,14 @@ export function WeekTable({ dates }: { dates: string[] }) {
   );
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="border-b-2 border-gray-200 bg-gray-50/80">
+          <tr className="border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80">
             {HEADERS.map(({ label, align }) => (
               <th
                 key={label}
-                className={`px-3 py-2 text-xs text-gray-500 font-semibold uppercase tracking-wide whitespace-nowrap ${align}`}
+                className={`px-3 py-2 text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide whitespace-nowrap ${align}`}
               >
                 {label}
               </th>

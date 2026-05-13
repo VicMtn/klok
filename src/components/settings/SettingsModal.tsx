@@ -15,14 +15,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/30 dark:bg-black/60 flex items-center justify-center z-50"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-xl shadow-xl p-6 w-80">
-        <h2 className="text-base font-semibold mb-5">Paramètres</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-80 border border-transparent dark:border-gray-700">
+        <h2 className="text-base font-semibold mb-5 text-gray-800 dark:text-gray-100">Paramètres</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1.5">
+            <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1.5">
               Heures attendues par jour
             </label>
             <input
@@ -32,20 +32,20 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               step="0.5"
               min="1"
               max="24"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
             />
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
           >
             Annuler
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
           >
             Enregistrer
           </button>

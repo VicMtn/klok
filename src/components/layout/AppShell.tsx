@@ -15,7 +15,7 @@ interface Props {
 
 export function AppShell({ children, currentPage, onNavigate }: Props) {
   return (
-    <div id="app-shell" className="flex h-screen overflow-hidden bg-white">
+    <div id="app-shell" className="flex h-screen overflow-hidden bg-white dark:bg-gray-900">
       <Sidebar items={NAV_ITEMS} current={currentPage} onNavigate={onNavigate} />
       <main className="flex-1 overflow-hidden flex flex-col">{children}</main>
     </div>

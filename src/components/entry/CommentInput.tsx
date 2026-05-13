@@ -22,7 +22,7 @@ export function CommentInput({ value, onChange }: Props) {
       placeholder="Note..."
       onChange={(e) => setDraft(e.target.value)}
       onBlur={handleBlur}
-      className="w-full text-xs text-gray-500 bg-transparent border-none focus:outline-none placeholder-gray-300"
+      className="w-full text-xs text-gray-500 dark:text-gray-400 bg-transparent border-none focus:outline-none placeholder-gray-300 dark:placeholder-gray-600"
     />
   );
 }

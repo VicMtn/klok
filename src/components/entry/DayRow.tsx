@@ -35,23 +35,27 @@ export function DayRow({ date }: { date: string }) {
 
   return (
     <tr
-      className={`border-b border-gray-100 transition-colors ${
+      className={`border-b border-gray-100 dark:border-gray-700/50 transition-colors ${
         isToday
-          ? "bg-blue-50"
+          ? "bg-blue-50 dark:bg-blue-900/20"
           : isWeekend
-          ? "bg-gray-50/60"
-          : "hover:bg-gray-50/80"
+          ? "bg-gray-50/60 dark:bg-gray-800/30"
+          : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40"
       }`}
     >
       <td className="px-3 py-2 whitespace-nowrap">
         <span
           className={`text-sm font-medium capitalize ${
-            isToday ? "text-blue-700" : isWeekend ? "text-gray-400" : "text-gray-700"
+            isToday
+              ? "text-blue-700 dark:text-blue-300"
+              : isWeekend
+              ? "text-gray-400 dark:text-gray-500"
+              : "text-gray-700 dark:text-gray-200"
           }`}
         >
           {getDayName(date, true)}
         </span>
-        <span className="ml-1.5 text-xs text-gray-400">{formatDisplayDate(date)}</span>
+        <span className="ml-1.5 text-xs text-gray-400 dark:text-gray-500">{formatDisplayDate(date)}</span>
       </td>
       <td className="px-2 py-2 text-center">
         <TimeInput value={e.arrival} onChange={handle("arrival")} warning={warnings.has("arrival")} />
@@ -61,8 +65,8 @@ export function DayRow({ date }: { date: string }) {
       </td>
       <td className="px-3 py-2 text-center">
         {breakDuration > 0
-          ? <span className="text-sm font-mono text-gray-500">{formatDecimalHours(breakDuration / 60)}</span>
-          : <span className="text-gray-300 text-sm font-mono">—</span>
+          ? <span className="text-sm font-mono text-gray-500 dark:text-gray-400">{formatDecimalHours(breakDuration / 60)}</span>
+          : <span className="text-gray-300 dark:text-gray-600 text-sm font-mono">—</span>
         }
       </td>
       <td className="px-2 py-2 text-center">
@@ -76,8 +80,8 @@ export function DayRow({ date }: { date: string }) {
       </td>
       <td className="px-3 py-2 text-right">
         {isComplete
-          ? <span className="text-sm font-mono text-gray-500">{netDecimal.toFixed(2)}</span>
-          : <span className="text-gray-300 text-sm font-mono">—</span>
+          ? <span className="text-sm font-mono text-gray-500 dark:text-gray-400">{netDecimal.toFixed(2)}</span>
+          : <span className="text-gray-300 dark:text-gray-600 text-sm font-mono">—</span>
         }
       </td>
       <td className="px-3 py-2 min-w-32">

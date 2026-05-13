@@ -1,12 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, ChartsReferenceLine } from "@mui/x-charts";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Header } from "../components/layout/Header";
 import { getEntriesForYear } from "../lib/db";
 import { calculateDay, calculateTotal, calculateBalance } from "../lib/calculations";
 import { getISOWeek } from "../lib/dateUtils";
 import { formatDecimalHours, formatBalance } from "../lib/formatting";
 import { useSettingsStore } from "../store/useSettingsStore";
+import { useThemeStore } from "../store/useThemeStore";
 import type { TimeEntry } from "../types/entry";
+
+const lightTheme = createTheme({ palette: { mode: "light" } });
+const darkTheme = createTheme({
+  palette: {
+    mode: "dark",
+    background: { paper: "#1f2937", default: "#111827" },
+    text: { primary: "#f3f4f6", secondary: "#9ca3af" },
+  },
+});
 
 function buildWeeklyData(entries: TimeEntry[], upToWeek: number) {
   const weekMap = new Map<number, number>();
@@ -27,6 +38,7 @@ function buildWeeklyData(entries: TimeEntry[], upToWeek: number) {
 export function StatsView() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const expectedHoursPerDay = useSettingsStore((s) => s.settings.expected_hours_per_day);
+  const dark = useThemeStore((s) => s.dark);
 
   const now = new Date();
   const year = now.getFullYear();
@@ -40,6 +52,7 @@ export function StatsView() {
   const totalHours = useMemo(() => calculateTotal(entries), [entries]);
   const balance = useMemo(() => calculateBalance(entries, expectedHoursPerDay), [entries, expectedHoursPerDay]);
   const workedDays = useMemo(() => entries.filter((e) => calculateDay(e).isComplete).length, [entries]);
+
   const completedWeeks = weeklyData.slice(0, currentWeek - 1);
   const workedWeeks = completedWeeks.filter((w) => w.hours > 0).length;
   const completedHours = completedWeeks.reduce((s, w) => s + w.hours, 0);
@@ -48,6 +61,8 @@ export function StatsView() {
   const expectedWeeklyHours = expectedHoursPerDay * 5;
   const labels = weeklyData.map((d) => d.label);
   const values = weeklyData.map((d) => d.hours);
+
+  const refLineColor = dark ? "#f87171" : "#ef4444";
 
   return (
     <div className="flex flex-col h-full">
@@ -60,50 +75,52 @@ export function StatsView() {
           <StatCard
             label="Balance"
             value={totalHours > 0 ? formatBalance(balance) : "—"}
-            valueColor={balance >= 0 ? "text-green-600" : "text-red-500"}
+            valueColor={balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}
           />
           <StatCard label="Moy. par semaine" value={avgPerWeek > 0 ? formatDecimalHours(avgPerWeek) : "—"} />
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
           <div className="mb-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               Heures nettes par semaine
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               Semaines 1 à {currentWeek} · objectif {expectedWeeklyHours}h / semaine
             </p>
           </div>
-          <BarChart
-            xAxis={[{
-              scaleType: "band",
-              data: labels,
-              tickLabelStyle: { fontSize: 10, fill: "#9ca3af" },
-              disableTicks: true,
-            }]}
-            yAxis={[{
-              valueFormatter: (v: number) => `${v}h`,
-              tickLabelStyle: { fontSize: 10, fill: "#9ca3af" },
-              tickMinStep: 5,
-            }]}
-            series={[{
-              data: values,
-              color: "#3b82f6",
-              valueFormatter: (v) => (v !== null && v > 0 ? `${v}h` : "—"),
-            }]}
-            height={320}
-            margin={{ left: 44, right: 16, top: 16, bottom: 36 }}
-            slots={{ legend: () => null }}
-            borderRadius={3}
-          >
-            <ChartsReferenceLine
-              y={expectedWeeklyHours}
-              label={`${expectedWeeklyHours}h`}
-              lineStyle={{ stroke: "#ef4444", strokeDasharray: "5 3", strokeWidth: 1.5 }}
-              labelStyle={{ fontSize: 10, fill: "#ef4444", fontWeight: 600 }}
-              labelAlign="end"
-            />
-          </BarChart>
+          <ThemeProvider theme={dark ? darkTheme : lightTheme}>
+            <BarChart
+              xAxis={[{
+                scaleType: "band",
+                data: labels,
+                tickLabelStyle: { fontSize: 10 },
+                disableTicks: true,
+              }]}
+              yAxis={[{
+                valueFormatter: (v: number) => `${v}h`,
+                tickLabelStyle: { fontSize: 10 },
+                tickMinStep: 5,
+              }]}
+              series={[{
+                data: values,
+                color: dark ? "#60a5fa" : "#3b82f6",
+                valueFormatter: (v) => (v !== null && v > 0 ? `${v}h` : "—"),
+              }]}
+              height={320}
+              margin={{ left: 44, right: 16, top: 16, bottom: 36 }}
+              slots={{ legend: () => null }}
+              borderRadius={3}
+            >
+              <ChartsReferenceLine
+                y={expectedWeeklyHours}
+                label={`${expectedWeeklyHours}h`}
+                lineStyle={{ stroke: refLineColor, strokeDasharray: "5 3", strokeWidth: 1.5 }}
+                labelStyle={{ fontSize: 10, fill: refLineColor, fontWeight: 600 }}
+                labelAlign="end"
+              />
+            </BarChart>
+          </ThemeProvider>
         </div>
 
       </div>
@@ -114,15 +131,15 @@ export function StatsView() {
 function StatCard({
   label,
   value,
-  valueColor = "text-gray-800",
+  valueColor = "text-gray-800 dark:text-gray-100",
 }: {
   label: string;
   value: string;
   valueColor?: string;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3.5">
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</p>
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3.5">
+      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">{label}</p>
       <p className={`mt-1.5 text-2xl font-semibold font-mono ${valueColor}`}>{value}</p>
     </div>
   );
