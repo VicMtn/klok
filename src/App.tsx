@@ -4,12 +4,13 @@ import { listen } from "@tauri-apps/api/event";
 import { AppShell } from "./components/layout/AppShell";
 import { WeekView } from "./pages/WeekView";
 import { MonthView } from "./pages/MonthView";
+import { StatsView } from "./pages/StatsView";
 import { PrintView } from "./components/print/PrintView";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { useBadgeStore } from "./store/useBadgeStore";
 import { getISOWeek } from "./lib/dateUtils";
 
-type Page = "week" | "month";
+type Page = "week" | "month" | "stats";
 
 const TRAY_STATUS: Record<number, string> = {
   0: "Prêt",
@@ -86,12 +87,14 @@ function App() {
             week={weekNav.week}
             onNavigate={(year, week) => setWeekNav({ year, week })}
           />
-        ) : (
+        ) : page === "month" ? (
           <MonthView
             year={monthNav.year}
             month={monthNav.month}
             onNavigate={(year, month) => setMonthNav({ year, month })}
           />
+        ) : (
+          <StatsView />
         )}
       </AppShell>
       <PrintView />

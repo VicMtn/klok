@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 const NAV_ITEMS = [
   { label: "Semaine", href: "week" },
   { label: "Mois", href: "month" },
+  { label: "Statistiques", href: "stats" },
 ];
 
 interface Props {

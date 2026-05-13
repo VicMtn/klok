@@ -29,6 +29,13 @@ export async function getEntriesForMonth(
   );
 }
 
+export async function getEntriesForYear(year: number): Promise<TimeEntry[]> {
+  return (await db()).select<TimeEntry[]>(
+    "SELECT * FROM time_entries WHERE date LIKE $1 ORDER BY date",
+    [`${year}-%`]
+  );
+}
+
 export async function updateEntryField(
   date: string,
   field: string,
