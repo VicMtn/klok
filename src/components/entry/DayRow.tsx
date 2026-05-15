@@ -100,23 +100,21 @@ export function DayRow({ date }: { date: string }) {
 
   return (
     <tr
-      className={`border-b border-gray-100 dark:border-gray-700/50 transition-colors group ${
-        isToday
-          ? "bg-blue-50 dark:bg-blue-900/20"
-          : isWeekend
+      className={`border-b border-gray-100 dark:border-gray-700/50 transition-colors group ${isToday
+        ? "bg-blue-50 dark:bg-blue-900/20"
+        : isWeekend
           ? "bg-gray-50/60 dark:bg-gray-800/30"
           : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40"
-      }`}
+        }`}
     >
       <td className="px-3 py-2 whitespace-nowrap">
         <span
-          className={`text-sm font-medium capitalize ${
-            isToday
-              ? "text-blue-700 dark:text-blue-300"
-              : isWeekend
+          className={`text-sm font-medium capitalize ${isToday
+            ? "text-blue-700 dark:text-blue-300"
+            : isWeekend
               ? "text-gray-400 dark:text-gray-500"
               : "text-gray-700 dark:text-gray-200"
-          }`}
+            }`}
         >
           {getDayName(date, true)}
         </span>
@@ -155,9 +153,9 @@ export function DayRow({ date }: { date: string }) {
           <button
             onClick={() => toggleHoliday(date)}
             title="Marquer comme jour férié"
-            className="opacity-0 group-hover:opacity-100 text-xs text-gray-300 dark:text-gray-600 hover:text-amber-500 dark:hover:text-amber-400 transition-all shrink-0 px-1"
+            className="bg-gray-100 rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 hover:text-amber-500 dark:hover:text-amber-400 transition-all shrink-0 px-1"
           >
-            JF
+            Férié
           </button>
         </div>
       </td>
