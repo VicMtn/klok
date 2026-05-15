@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TimeInput } from "./TimeInput";
 import { CommentInput } from "./CommentInput";
 import { DayTotal } from "./DayTotal";
+import { ConfirmModal } from "../ui/ConfirmModal";
 import { validateEntrySequence } from "../../lib/validation";
 import { getDayName, formatDisplayDate, today } from "../../lib/dateUtils";
 import { calculateDay } from "../../lib/calculations";
@@ -20,6 +21,7 @@ export function DayRow({ date }: { date: string }) {
   const updateLabel = useHolidaysStore((s) => s.updateLabel);
 
   const [labelDraft, setLabelDraft] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const e: TimeEntry = entry ?? {
     date,
@@ -87,12 +89,19 @@ export function DayRow({ date }: { date: string }) {
         </td>
         <td className="px-3 py-2 text-right">
           <button
-            onClick={() => toggleHoliday(date)}
+            onClick={() => setShowConfirm(true)}
             title="Retirer le statut férié"
             className="text-xs text-amber-400 dark:text-amber-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
           >
             ×
           </button>
+          {showConfirm && (
+            <ConfirmModal
+              message="Retirer le statut férié de ce jour ?"
+              onConfirm={() => { toggleHoliday(date); setShowConfirm(false); }}
+              onCancel={() => setShowConfirm(false)}
+            />
+          )}
         </td>
       </tr>
     );
