@@ -5,6 +5,7 @@ import { Header } from "../components/layout/Header";
 import { useEntriesStore } from "../store/useEntriesStore";
 import { useBadgeStore } from "../store/useBadgeStore";
 import { usePrintStore } from "../store/usePrintStore";
+import { useHolidaysStore } from "../store/useHolidaysStore";
 import { getMonthDates, today } from "../lib/dateUtils";
 
 interface Props {
@@ -22,6 +23,7 @@ export function MonthView({ year, month, onNavigate }: Props) {
   const loadMonth = useEntriesStore((s) => s.loadMonth);
   const hydrate = useBadgeStore((s) => s.hydrate);
   const setPrint = usePrintStore((s) => s.setPrint);
+  const loadHolidaysRange = useHolidaysStore((s) => s.loadRange);
 
   const dates = useMemo(() => getMonthDates(year, month), [year, month]);
   const title = `${MONTH_NAMES[month - 1]} ${year}`;
@@ -43,6 +45,7 @@ export function MonthView({ year, month, onNavigate }: Props) {
     loadMonth(year, month).then(() => {
       if (todayInView) hydrate(useEntriesStore.getState().entries.get(todayDate));
     });
+    loadHolidaysRange(dates[0], dates[dates.length - 1]);
     setPrint(dates, title);
   }, [year, month]);
 

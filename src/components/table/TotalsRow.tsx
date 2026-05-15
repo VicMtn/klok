@@ -1,16 +1,17 @@
-import { calculateTotal, calculateBalance } from "../../lib/calculations";
+import { calculateTotalWithHolidays, calculateBalance } from "../../lib/calculations";
 import { formatDecimalHours, formatBalance } from "../../lib/formatting";
-import type { TimeEntry } from "../../types/entry";
+import type { TimeEntry, Holiday } from "../../types/entry";
 
 interface Props {
   entries: TimeEntry[];
+  holidays: Holiday[];
   expectedHoursPerDay: number;
   colSpan?: number;
 }
 
-export function TotalsRow({ entries, expectedHoursPerDay, colSpan = 5 }: Props) {
-  const total = calculateTotal(entries);
-  const balance = calculateBalance(entries, expectedHoursPerDay);
+export function TotalsRow({ entries, holidays, expectedHoursPerDay, colSpan = 5 }: Props) {
+  const total = calculateTotalWithHolidays(entries, holidays, expectedHoursPerDay);
+  const balance = calculateBalance(entries, expectedHoursPerDay, holidays);
 
   return (
     <tr className="bg-gray-50 dark:bg-gray-800/60 border-t-2 border-gray-200 dark:border-gray-700">

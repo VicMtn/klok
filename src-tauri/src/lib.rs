@@ -81,6 +81,12 @@ pub fn run() {
             sql: include_str!("../migrations/002_settings_table.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "holidays_table",
+            sql: include_str!("../migrations/003_holidays_table.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

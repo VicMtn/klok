@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart, ChartsReferenceLine } from "@mui/x-charts";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Header } from "../components/layout/Header";
-import { getEntriesForYear } from "../lib/db";
-import { calculateDay, calculateTotal, calculateBalance } from "../lib/calculations";
+import { getEntriesForYear, getHolidaysForYear } from "../lib/db";
+import { calculateDay, calculateTotalWithHolidays, calculateBalance } from "../lib/calculations";
 import { getISOWeek } from "../lib/dateUtils";
 import { formatDecimalHours, formatBalance } from "../lib/formatting";
 import { useSettingsStore } from "../store/useSettingsStore";
 import { useThemeStore } from "../store/useThemeStore";
-import type { TimeEntry } from "../types/entry";
+import type { TimeEntry, Holiday } from "../types/entry";
 
 const lightTheme = createTheme({ palette: { mode: "light" } });
 const darkTheme = createTheme({
@@ -19,9 +19,17 @@ const darkTheme = createTheme({
   },
 });
 
-function buildWeeklyData(entries: TimeEntry[], upToWeek: number) {
+function buildWeeklyData(
+  entries: TimeEntry[],
+  holidays: Holiday[],
+  upToWeek: number,
+  expectedHoursPerDay: number
+) {
   const weekMap = new Map<number, number>();
+  const holidayDates = new Set(holidays.map((h) => h.date));
+
   for (const entry of entries) {
+    if (holidayDates.has(entry.date)) continue;
     const { netDecimal, isComplete } = calculateDay(entry);
     if (!isComplete) continue;
     const { week } = getISOWeek(new Date(entry.date + "T00:00:00"));
@@ -29,6 +37,14 @@ function buildWeeklyData(entries: TimeEntry[], upToWeek: number) {
       weekMap.set(week, Math.round(((weekMap.get(week) ?? 0) + netDecimal) * 100) / 100);
     }
   }
+
+  for (const holiday of holidays) {
+    const { week } = getISOWeek(new Date(holiday.date + "T00:00:00"));
+    if (week >= 1 && week <= upToWeek) {
+      weekMap.set(week, Math.round(((weekMap.get(week) ?? 0) + expectedHoursPerDay) * 100) / 100);
+    }
+  }
+
   return Array.from({ length: upToWeek }, (_, i) => {
     const w = i + 1;
     return { label: `S${w}`, hours: weekMap.get(w) ?? 0 };
@@ -37,6 +53,7 @@ function buildWeeklyData(entries: TimeEntry[], upToWeek: number) {
 
 export function StatsView() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const expectedHoursPerDay = useSettingsStore((s) => s.settings.expected_hours_per_day);
   const dark = useThemeStore((s) => s.dark);
 
@@ -46,12 +63,31 @@ export function StatsView() {
 
   useEffect(() => {
     getEntriesForYear(year).then(setEntries);
+    getHolidaysForYear(year).then(setHolidays);
   }, [year]);
 
-  const weeklyData = useMemo(() => buildWeeklyData(entries, currentWeek), [entries, currentWeek]);
-  const totalHours = useMemo(() => calculateTotal(entries), [entries]);
-  const balance = useMemo(() => calculateBalance(entries, expectedHoursPerDay), [entries, expectedHoursPerDay]);
-  const workedDays = useMemo(() => entries.filter((e) => calculateDay(e).isComplete).length, [entries]);
+  const weeklyData = useMemo(
+    () => buildWeeklyData(entries, holidays, currentWeek, expectedHoursPerDay),
+    [entries, holidays, currentWeek, expectedHoursPerDay]
+  );
+
+  const totalHours = useMemo(
+    () => calculateTotalWithHolidays(entries, holidays, expectedHoursPerDay),
+    [entries, holidays, expectedHoursPerDay]
+  );
+
+  const balance = useMemo(
+    () => calculateBalance(entries, expectedHoursPerDay, holidays),
+    [entries, holidays, expectedHoursPerDay]
+  );
+
+  const workedDays = useMemo(() => {
+    const holidayDates = new Set(holidays.map((h) => h.date));
+    const regularDays = entries.filter(
+      (e) => !holidayDates.has(e.date) && calculateDay(e).isComplete
+    ).length;
+    return regularDays + holidays.length;
+  }, [entries, holidays]);
 
   const completedWeeks = weeklyData.slice(0, currentWeek - 1);
   const workedWeeks = completedWeeks.filter((w) => w.hours > 0).length;

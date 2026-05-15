@@ -5,6 +5,7 @@ import { Header } from "../components/layout/Header";
 import { useEntriesStore } from "../store/useEntriesStore";
 import { useBadgeStore } from "../store/useBadgeStore";
 import { usePrintStore } from "../store/usePrintStore";
+import { useHolidaysStore } from "../store/useHolidaysStore";
 import {
   getISOWeekDates,
   getISOWeek,
@@ -23,6 +24,7 @@ export function WeekView({ year, week, onNavigate }: Props) {
   const loadWeek = useEntriesStore((s) => s.loadWeek);
   const hydrate = useBadgeStore((s) => s.hydrate);
   const setPrint = usePrintStore((s) => s.setPrint);
+  const loadHolidaysRange = useHolidaysStore((s) => s.loadRange);
 
   const dates = useMemo(() => getISOWeekDates(year, week), [year, week]);
   const monthLabel = useMemo(() => {
@@ -45,9 +47,12 @@ export function WeekView({ year, week, onNavigate }: Props) {
 
   // Load entries when navigation changes
   useEffect(() => {
-    loadWeek(dates[0], dates[dates.length - 1]).then(() => {
+    const start = dates[0];
+    const end = dates[dates.length - 1];
+    loadWeek(start, end).then(() => {
       if (todayInView) hydrate(useEntriesStore.getState().entries.get(todayDate));
     });
+    loadHolidaysRange(start, end);
     setPrint(dates, title);
   }, [year, week]);
 

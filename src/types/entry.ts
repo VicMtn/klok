@@ -11,6 +11,12 @@ export interface TimeEntry {
 
 export type TimeField = "arrival" | "break_start" | "break_end" | "departure";
 
+export interface Holiday {
+  id?: number;
+  date: string;
+  label: string | null;
+}
+
 export interface DayCalculation {
   gross: number;
   breakDuration: number;

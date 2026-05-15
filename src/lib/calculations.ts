@@ -1,4 +1,4 @@
-import type { TimeEntry, DayCalculation } from "../types/entry";
+import type { TimeEntry, DayCalculation, Holiday } from "../types/entry";
 import { timeToMinutes } from "./formatting";
 
 export function calculateDay(entry: TimeEntry): DayCalculation {
@@ -28,10 +28,25 @@ export function calculateTotal(entries: TimeEntry[]): number {
 
 export function calculateBalance(
   entries: TimeEntry[],
+  expectedHoursPerDay: number,
+  holidays: Holiday[] = []
+): number {
+  const holidayDates = new Set(holidays.map((h) => h.date));
+  const nonHolidayEntries = entries.filter((e) => !holidayDates.has(e.date));
+  const workedDays = nonHolidayEntries.filter((e) => calculateDay(e).isComplete).length;
+  const expected = workedDays * expectedHoursPerDay;
+  const actual = calculateTotal(nonHolidayEntries);
+  return Math.round((actual - expected) * 100) / 100;
+}
+
+export function calculateTotalWithHolidays(
+  entries: TimeEntry[],
+  holidays: Holiday[],
   expectedHoursPerDay: number
 ): number {
-  const workedDays = entries.filter((e) => calculateDay(e).isComplete).length;
-  const expected = workedDays * expectedHoursPerDay;
-  const actual = calculateTotal(entries);
-  return Math.round((actual - expected) * 100) / 100;
+  const holidayDates = new Set(holidays.map((h) => h.date));
+  const nonHolidayEntries = entries.filter((e) => !holidayDates.has(e.date));
+  const worked = calculateTotal(nonHolidayEntries);
+  const holidayHours = holidays.length * expectedHoursPerDay;
+  return Math.round((worked + holidayHours) * 100) / 100;
 }
