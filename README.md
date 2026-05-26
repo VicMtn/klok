@@ -4,12 +4,14 @@ A minimal time tracking app for macOS, built with Tauri v2 and React.
 
 ## Features
 
-- **Stamp in/out** from the menu bar — arrival, break start/end, departure
-- **Week and month views** with daily net hours, break duration, and running balance
-- **Statistics page** — weekly hours bar chart that grows as the year progresses, with summary cards (total hours, worked days, balance, weekly average over completed weeks)
-- **Dark mode** — toggle in the sidebar, persisted across sessions, WCAG AA contrast throughout
-- **SQLite** — data stored locally in `~/Library/Application Support/com.klok.app`
+- **Week and month views** — arrival, break start/end, departure, net hours, balance per day
+- **Public holidays** — mark any day as a holiday; it counts toward your expected hours automatically
+- **Statistics page** — weekly bar chart for the current year, with total hours, worked days, balance, and weekly average
+- **Expected hours per week** — configurable target (default 37.5h), used to compute daily and weekly balance
+- **Notes** per day entry
+- **Dark mode** — toggle in the sidebar, persisted across sessions
 - **Print** week or month to PDF via the native print dialog
+- **SQLite** — all data stored locally in `~/Library/Application Support/com.klok.app`
 - Runs quietly in the menu bar; closing the window keeps it alive in the background
 
 ## Stack
