@@ -1,6 +1,18 @@
 # Klok
 
-A minimal time tracking app for macOS, built with Tauri v2 and React.
+> A minimal time tracking app for macOS.
+
+![Tauri](https://img.shields.io/badge/Tauri_v2-24C8D8?style=flat&logo=tauri&logoColor=white)
+![React](https://img.shields.io/badge/React_19-20232A?style=flat&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript_5.8-3178C6?style=flat&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_v4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)
+
+## Screenshots
+
+| Weekly view | Statistics |
+|---|---|
+| ![Weekly view](screenshots/weekly_capture.png) | ![Statistics](screenshots/klok_stats_capture.png) |
 
 ## Features
 
@@ -16,11 +28,14 @@ A minimal time tracking app for macOS, built with Tauri v2 and React.
 
 ## Stack
 
-- [Tauri v2](https://tauri.app) — Rust backend, WebKit renderer
-- React 19 + TypeScript + Tailwind CSS v4
-- Zustand — state management
-- `tauri-plugin-sql` — SQLite access
-- MUI X Charts — statistics visualisation
+| | |
+|---|---|
+| [Tauri v2](https://tauri.app) | Rust backend, WebKit renderer |
+| React 19 + TypeScript | UI |
+| Tailwind CSS v4 | Styling |
+| Zustand | State management |
+| `tauri-plugin-sql` | SQLite access |
+| MUI X Charts | Statistics chart |
 
 ## Development
 
