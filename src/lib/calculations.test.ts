@@ -101,6 +101,9 @@ describe("calculateTotal", () => {
   });
 });
 
+// Les fonctions calculateBalance et calculateTotalWithHolidays reçoivent
+// expectedHoursPerDay = expectedHoursPerWeek / 5 (calculé par les appelants).
+
 describe("calculateBalance", () => {
   it("retourne 0 si heures exactement atteintes", () => {
     const entries = [entry({ arrival: "09:00", departure: "17:00" })];
@@ -132,6 +135,11 @@ describe("calculateBalance", () => {
       entry({ date: "2024-01-16", arrival: "09:00" }),
     ];
     expect(calculateBalance(entries, 8)).toBe(0);
+  });
+
+  it("fonctionne avec une valeur issue de heures par semaine (40h/5)", () => {
+    const entries = [entry({ arrival: "09:00", departure: "17:00" })];
+    expect(calculateBalance(entries, 40 / 5)).toBe(0);
   });
 });
 

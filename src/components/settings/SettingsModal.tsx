@@ -3,12 +3,12 @@ import { useSettingsStore } from "../../store/useSettingsStore";
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const { settings, update } = useSettingsStore();
-  const [hours, setHours] = useState(String(settings.expected_hours_per_day));
+  const [hours, setHours] = useState(String(settings.expected_hours_per_week));
 
   const handleSave = async () => {
     const parsed = parseFloat(hours);
-    if (!isNaN(parsed) && parsed > 0 && parsed <= 24) {
-      await update("expected_hours_per_day", parsed);
+    if (!isNaN(parsed) && parsed > 0 && parsed <= 168) {
+      await update("expected_hours_per_week", parsed);
     }
     onClose();
   };
@@ -23,7 +23,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         <div className="space-y-4">
           <div>
             <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1.5">
-              Heures attendues par jour
+              Heures attendues par semaine
             </label>
             <input
               type="number"
@@ -31,7 +31,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               onChange={(e) => setHours(e.target.value)}
               step="0.5"
               min="1"
-              max="24"
+              max="168"
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
             />
           </div>

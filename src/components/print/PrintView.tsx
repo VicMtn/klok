@@ -6,7 +6,7 @@ import { PrintWeekTable } from "./PrintWeekTable";
 export function PrintView() {
   const entries = useEntriesStore((s) => s.entries);
   const expectedHoursPerDay = useSettingsStore(
-    (s) => s.settings.expected_hours_per_day
+    (s) => s.settings.expected_hours_per_week / 5
   );
   const { dates, title } = usePrintStore();
 

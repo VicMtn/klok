@@ -15,7 +15,8 @@ import { useHolidaysStore } from "../../store/useHolidaysStore";
 export function DayRow({ date }: { date: string }) {
   const entry = useEntriesStore((s) => s.entries.get(date));
   const updateField = useEntriesStore((s) => s.updateField);
-  const expectedHours = useSettingsStore((s) => s.settings.expected_hours_per_day);
+  const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
+  const expectedHours = expectedHoursPerWeek / 5;
   const holiday = useHolidaysStore((s) => s.holidays.get(date));
   const toggleHoliday = useHolidaysStore((s) => s.toggle);
   const updateLabel = useHolidaysStore((s) => s.updateLabel);

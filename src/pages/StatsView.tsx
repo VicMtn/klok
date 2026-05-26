@@ -23,8 +23,9 @@ function buildWeeklyData(
   entries: TimeEntry[],
   holidays: Holiday[],
   upToWeek: number,
-  expectedHoursPerDay: number
+  expectedHoursPerWeek: number
 ) {
+  const expectedHoursPerDay = expectedHoursPerWeek / 5;
   const weekMap = new Map<number, number>();
   const holidayDates = new Set(holidays.map((h) => h.date));
 
@@ -54,7 +55,8 @@ function buildWeeklyData(
 export function StatsView() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
-  const expectedHoursPerDay = useSettingsStore((s) => s.settings.expected_hours_per_day);
+  const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
+  const expectedHoursPerDay = expectedHoursPerWeek / 5;
   const dark = useThemeStore((s) => s.dark);
 
   const now = new Date();
@@ -67,8 +69,8 @@ export function StatsView() {
   }, [year]);
 
   const weeklyData = useMemo(
-    () => buildWeeklyData(entries, holidays, currentWeek, expectedHoursPerDay),
-    [entries, holidays, currentWeek, expectedHoursPerDay]
+    () => buildWeeklyData(entries, holidays, currentWeek, expectedHoursPerWeek),
+    [entries, holidays, currentWeek, expectedHoursPerWeek]
   );
 
   const totalHours = useMemo(
@@ -94,7 +96,7 @@ export function StatsView() {
   const completedHours = completedWeeks.reduce((s, w) => s + w.hours, 0);
   const avgPerWeek = workedWeeks > 0 ? Math.round((completedHours / workedWeeks) * 100) / 100 : 0;
 
-  const expectedWeeklyHours = expectedHoursPerDay * 5;
+  const expectedWeeklyHours = expectedHoursPerWeek;
   const labels = weeklyData.map((d) => d.label);
   const values = weeklyData.map((d) => d.hours);
 

@@ -22,7 +22,7 @@ export function WeekTable({ dates }: { dates: string[] }) {
   const entriesMap = useEntriesStore((s) => s.entries);
   const holidaysMap = useHolidaysStore((s) => s.holidays);
   const expectedHoursPerDay = useSettingsStore(
-    (s) => s.settings.expected_hours_per_day
+    (s) => s.settings.expected_hours_per_week / 5
   );
 
   const entries = useMemo(

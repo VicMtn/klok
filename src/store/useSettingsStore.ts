@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { getAllSettings, setSetting } from "../lib/db";
 
 interface Settings {
-  expected_hours_per_day: number;
+  expected_hours_per_week: number;
   week_starts_on: number;
 }
 
@@ -14,7 +14,7 @@ interface SettingsState {
 }
 
 const defaults: Settings = {
-  expected_hours_per_day: 7.5,
+  expected_hours_per_week: 37.5,
   week_starts_on: 1,
 };
 
@@ -26,9 +26,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const raw = await getAllSettings();
     set({
       settings: {
-        expected_hours_per_day: raw.expected_hours_per_day
-          ? parseFloat(raw.expected_hours_per_day)
-          : defaults.expected_hours_per_day,
+        expected_hours_per_week: raw.expected_hours_per_week
+          ? parseFloat(raw.expected_hours_per_week)
+          : defaults.expected_hours_per_week,
         week_starts_on: raw.week_starts_on
           ? parseInt(raw.week_starts_on, 10)
           : defaults.week_starts_on,
