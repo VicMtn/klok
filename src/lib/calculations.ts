@@ -7,15 +7,16 @@ export function calculateDay(entry: TimeEntry): DayCalculation {
   const breakStart = entry.break_start ? timeToMinutes(entry.break_start) : null;
   const breakEnd = entry.break_end ? timeToMinutes(entry.break_end) : null;
 
-  if (arrival === null || departure === null) {
-    return { gross: 0, breakDuration: 0, net: 0, netDecimal: 0, isComplete: false };
-  }
-
-  const gross = departure - arrival;
   const breakDuration =
     breakStart !== null && breakEnd !== null && breakEnd > breakStart
       ? breakEnd - breakStart
       : 0;
+
+  if (arrival === null || departure === null) {
+    return { gross: 0, breakDuration, net: 0, netDecimal: 0, isComplete: false };
+  }
+
+  const gross = departure - arrival;
   const net = Math.max(0, gross - breakDuration);
   const netDecimal = Math.round((net / 60) * 100) / 100;
 
