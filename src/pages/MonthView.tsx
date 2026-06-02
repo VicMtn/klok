@@ -7,6 +7,7 @@ import { useBadgeStore } from "../store/useBadgeStore";
 import { usePrintStore } from "../store/usePrintStore";
 import { useHolidaysStore } from "../store/useHolidaysStore";
 import { getMonthDates, today } from "../lib/dateUtils";
+import { useT } from "../i18n";
 
 interface Props {
   year: number;
@@ -14,19 +15,15 @@ interface Props {
   onNavigate: (year: number, month: number) => void;
 }
 
-const MONTH_NAMES = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-];
-
 export function MonthView({ year, month, onNavigate }: Props) {
+  const t = useT();
   const loadMonth = useEntriesStore((s) => s.loadMonth);
   const hydrate = useBadgeStore((s) => s.hydrate);
   const setPrint = usePrintStore((s) => s.setPrint);
   const loadHolidaysRange = useHolidaysStore((s) => s.loadRange);
 
   const dates = useMemo(() => getMonthDates(year, month), [year, month]);
-  const title = `${MONTH_NAMES[month - 1]} ${year}`;
+  const title = `${t.month.names[month - 1]} ${year}`;
 
   const prevM = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
   const nextM = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
@@ -73,7 +70,7 @@ export function MonthView({ year, month, onNavigate }: Props) {
           onClick={goToday}
           className="px-2 py-1 text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
         >
-          Aujourd'hui
+          {t.month.today}
         </button>
         <button
           onClick={() => onNavigate(nextM.year, nextM.month)}

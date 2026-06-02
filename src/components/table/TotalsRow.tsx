@@ -1,5 +1,6 @@
 import { calculateTotalWithHolidays, calculateBalance } from "../../lib/calculations";
 import { formatDecimalHours, formatBalance } from "../../lib/formatting";
+import { useT } from "../../i18n";
 import type { TimeEntry, Holiday } from "../../types/entry";
 
 interface Props {
@@ -10,13 +11,14 @@ interface Props {
 }
 
 export function TotalsRow({ entries, holidays, expectedHoursPerDay, colSpan = 5 }: Props) {
+  const t = useT();
   const total = calculateTotalWithHolidays(entries, holidays, expectedHoursPerDay);
   const balance = calculateBalance(entries, expectedHoursPerDay, holidays);
 
   return (
     <tr className="bg-gray-50 dark:bg-gray-800/60 border-t-2 border-gray-200 dark:border-gray-700">
       <td className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium" colSpan={colSpan}>
-        Total
+        {t.table.total}
       </td>
       <td className="px-3 py-2 text-right">
         <span className="text-sm font-mono font-semibold text-gray-800 dark:text-gray-100">

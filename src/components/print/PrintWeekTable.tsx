@@ -2,6 +2,7 @@ import { calculateDay } from "../../lib/calculations";
 import { formatDecimalHours, formatBalance, minutesToTime } from "../../lib/formatting";
 import { getDayName, formatDisplayDate } from "../../lib/dateUtils";
 import { calculateTotal, calculateBalance } from "../../lib/calculations";
+import { useT } from "../../i18n";
 import type { TimeEntry } from "../../types/entry";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function PrintWeekTable({ dates, entries, expectedHoursPerDay }: Props) {
+  const t = useT();
   const visibleEntries = dates.map((d) => entries.get(d)).filter(Boolean) as TimeEntry[];
   const total = calculateTotal(visibleEntries);
   const balance = calculateBalance(visibleEntries, expectedHoursPerDay);
@@ -19,14 +21,14 @@ export function PrintWeekTable({ dates, entries, expectedHoursPerDay }: Props) {
     <table className="w-full text-xs border-collapse">
       <thead>
         <tr className="border-b border-black">
-          <th className="text-left py-1 pr-2">Jour</th>
-          <th className="text-center py-1 px-1">Arrivée</th>
-          <th className="text-center py-1 px-1">Pause</th>
-          <th className="text-center py-1 px-1">Durée</th>
-          <th className="text-center py-1 px-1">Retour</th>
-          <th className="text-center py-1 px-1">Départ</th>
-          <th className="text-right py-1 px-1">Temps</th>
-          <th className="text-left py-1 pl-2">Note</th>
+          <th className="text-left py-1 pr-2">{t.table.day}</th>
+          <th className="text-center py-1 px-1">{t.table.arrival}</th>
+          <th className="text-center py-1 px-1">{t.table.breakStart}</th>
+          <th className="text-center py-1 px-1">{t.table.breakDuration}</th>
+          <th className="text-center py-1 px-1">{t.table.breakEnd}</th>
+          <th className="text-center py-1 px-1">{t.table.departure}</th>
+          <th className="text-right py-1 px-1">{t.table.netTime}</th>
+          <th className="text-left py-1 pl-2">{t.table.note}</th>
         </tr>
       </thead>
       <tbody>
@@ -64,7 +66,7 @@ export function PrintWeekTable({ dates, entries, expectedHoursPerDay }: Props) {
       <tfoot>
         <tr className="border-t-2 border-black font-semibold">
           <td colSpan={6} className="py-1 pr-2">
-            Total
+            {t.table.total}
           </td>
           <td className="text-right py-1 px-1">
             {total > 0 ? formatDecimalHours(total) : "—"}

@@ -1,3 +1,5 @@
+import { useT } from "../../i18n";
+
 type Props = {
   message: string;
   onConfirm: () => void;
@@ -5,6 +7,7 @@ type Props = {
 };
 
 export function ConfirmModal({ message, onConfirm, onCancel }: Props) {
+  const t = useT();
   return (
     <div
       className="fixed inset-0 bg-black/30 dark:bg-black/60 flex items-center justify-center z-50"
@@ -17,13 +20,13 @@ export function ConfirmModal({ message, onConfirm, onCancel }: Props) {
             onClick={onCancel}
             className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
           >
-            Annuler
+            {t.confirm.cancel}
           </button>
           <button
             onClick={onConfirm}
             className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-lg transition-colors"
           >
-            Confirmer
+            {t.confirm.confirm}
           </button>
         </div>
       </div>

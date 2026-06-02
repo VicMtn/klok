@@ -8,28 +8,16 @@ import { StatsView } from "./pages/StatsView";
 import { PrintView } from "./components/print/PrintView";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { useBadgeStore } from "./store/useBadgeStore";
+import { useLocaleStore } from "./store/useLocaleStore";
+import { getT } from "./i18n";
 import { getISOWeek } from "./lib/dateUtils";
 
 type Page = "week" | "month" | "stats";
 
-const TRAY_STATUS: Record<number, string> = {
-  0: "Prêt",
-  1: "Au travail",
-  2: "En pause",
-  3: "De retour",
-  4: "Journée terminée",
-};
-const TRAY_ACTION: Record<number, string> = {
-  0: "Arrivée",
-  1: "Début pause",
-  2: "Retour pause",
-  3: "Départ",
-  4: "—",
-};
-
 function App() {
   const load = useSettingsStore((s) => s.load);
   const badgeState = useBadgeStore((s) => s.state);
+  const locale = useLocaleStore((s) => s.locale);
   const [page, setPage] = useState<Page>("week");
 
   const now = new Date();
@@ -69,14 +57,15 @@ function App() {
     };
   }, []);
 
-  // Keep tray menu in sync whenever badge state changes
+  // Keep tray menu in sync whenever badge state or locale changes
   useEffect(() => {
+    const t = getT();
     invoke("update_tray", {
-      status: TRAY_STATUS[badgeState],
-      nextAction: TRAY_ACTION[badgeState],
+      status: t.tray.status[badgeState],
+      nextAction: t.tray.actions[badgeState],
       isDone: badgeState === 4,
     }).catch(() => {});
-  }, [badgeState]);
+  }, [badgeState, locale]);
 
   return (
     <>

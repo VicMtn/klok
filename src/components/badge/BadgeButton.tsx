@@ -1,10 +1,11 @@
 import { useBadgeStore } from "../../store/useBadgeStore";
 import { BadgeStateIndicator } from "./BadgeStateIndicator";
+import { useT } from "../../i18n";
 
 export function BadgeButton() {
   const state = useBadgeStore((s) => s.state);
   const stamp = useBadgeStore((s) => s.stamp);
-  const nextLabel = useBadgeStore((s) => s.nextLabel);
+  const t = useT();
   const isDone = state === 4;
 
   return (
@@ -19,7 +20,7 @@ export function BadgeButton() {
             : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white cursor-pointer"
         }`}
       >
-        {nextLabel()}
+        {t.badge.actions[state]}
       </button>
     </div>
   );

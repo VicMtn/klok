@@ -1,11 +1,6 @@
 import type { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
-
-const NAV_ITEMS = [
-  { label: "Semaine", href: "week" },
-  { label: "Mois", href: "month" },
-  { label: "Statistiques", href: "stats" },
-];
+import { useT } from "../../i18n";
 
 interface Props {
   children: ReactNode;
@@ -14,9 +9,16 @@ interface Props {
 }
 
 export function AppShell({ children, currentPage, onNavigate }: Props) {
+  const t = useT();
+  const navItems = [
+    { label: t.nav.week, href: "week" },
+    { label: t.nav.month, href: "month" },
+    { label: t.nav.stats, href: "stats" },
+  ];
+
   return (
     <div id="app-shell" className="flex h-screen overflow-hidden bg-white dark:bg-gray-900">
-      <Sidebar items={NAV_ITEMS} current={currentPage} onNavigate={onNavigate} />
+      <Sidebar items={navItems} current={currentPage} onNavigate={onNavigate} />
       <main className="flex-1 overflow-hidden flex flex-col">{children}</main>
     </div>
   );

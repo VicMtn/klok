@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "../../i18n";
 
 interface Props {
   value: string | null;
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export function CommentInput({ value, onChange }: Props) {
+  const t = useT();
   const [draft, setDraft] = useState<string | null>(null);
 
   const handleBlur = () => {
@@ -19,7 +21,7 @@ export function CommentInput({ value, onChange }: Props) {
     <input
       type="text"
       value={draft !== null ? draft : (value ?? "")}
-      placeholder="Note..."
+      placeholder={t.comment.placeholder}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={handleBlur}
       className="w-full text-xs text-gray-500 dark:text-gray-400 bg-transparent border-none focus:outline-none placeholder-gray-300 dark:placeholder-gray-600"

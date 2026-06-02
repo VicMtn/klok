@@ -13,6 +13,7 @@ import {
   prevWeek,
   nextWeek,
 } from "../lib/dateUtils";
+import { useT } from "../i18n";
 
 interface Props {
   year: number;
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function WeekView({ year, week, onNavigate }: Props) {
+  const t = useT();
   const loadWeek = useEntriesStore((s) => s.loadWeek);
   const hydrate = useBadgeStore((s) => s.hydrate);
   const setPrint = usePrintStore((s) => s.setPrint);
@@ -29,10 +31,10 @@ export function WeekView({ year, week, onNavigate }: Props) {
   const dates = useMemo(() => getISOWeekDates(year, week), [year, week]);
   const monthLabel = useMemo(() => {
     const d = new Date(dates[0] + "T00:00:00");
-    const m = d.toLocaleDateString("fr-FR", { month: "long" });
+    const m = d.toLocaleDateString(t.dateLocale, { month: "long" });
     return m.charAt(0).toUpperCase() + m.slice(1) + " " + d.getFullYear();
-  }, [dates]);
-  const title = `${monthLabel} — Semaine ${week}`;
+  }, [dates, t.dateLocale]);
+  const title = `${monthLabel} — ${t.week.label} ${week}`;
   const prev = prevWeek(year, week);
   const next = nextWeek(year, week);
 
@@ -74,7 +76,7 @@ export function WeekView({ year, week, onNavigate }: Props) {
           <>
             {monthLabel}
             <span className="text-s font-medium text-gray-400 px-2 py-0.5 rounded-full">
-              Semaine : {week}
+              {t.week.label} : {week}
             </span>
           </>
         }
@@ -91,7 +93,7 @@ export function WeekView({ year, week, onNavigate }: Props) {
           onClick={goToday}
           className="px-2 py-1 text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
         >
-          Aujourd'hui
+          {t.week.today}
         </button>
         <button
           onClick={() => onNavigate(next.year, next.week)}

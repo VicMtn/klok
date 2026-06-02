@@ -1,12 +1,5 @@
 import type { BadgeState } from "../../store/useBadgeStore";
-
-const LABELS: Record<BadgeState, string> = {
-  0: "Prêt",
-  1: "Au travail",
-  2: "En pause",
-  3: "De retour",
-  4: "Terminé",
-};
+import { useT } from "../../i18n";
 
 const DOT_COLOR: Record<BadgeState, string> = {
   0: "bg-gray-400",
@@ -17,10 +10,11 @@ const DOT_COLOR: Record<BadgeState, string> = {
 };
 
 export function BadgeStateIndicator({ state }: { state: BadgeState }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-1.5">
       <span className={`inline-block w-2 h-2 rounded-full ${DOT_COLOR[state]}`} />
-      <span className="text-xs text-gray-500 dark:text-gray-400">{LABELS[state]}</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{t.badge.labels[state]}</span>
     </div>
   );
 }

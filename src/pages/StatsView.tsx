@@ -8,6 +8,7 @@ import { getISOWeek } from "../lib/dateUtils";
 import { formatDecimalHours, formatBalance } from "../lib/formatting";
 import { useSettingsStore } from "../store/useSettingsStore";
 import { useThemeStore } from "../store/useThemeStore";
+import { useT } from "../i18n";
 import type { TimeEntry, Holiday } from "../types/entry";
 
 const lightTheme = createTheme({ palette: { mode: "light" } });
@@ -53,6 +54,7 @@ function buildWeeklyData(
 }
 
 export function StatsView() {
+  const t = useT();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
@@ -104,27 +106,27 @@ export function StatsView() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header title={`Statistiques ${year}`} hideBadge />
+      <Header title={`${t.nav.stats} ${year}`} hideBadge />
       <div className="flex-1 overflow-auto p-5 space-y-5">
 
         <div className="grid grid-cols-4 gap-4">
-          <StatCard label="Heures travaillées" value={totalHours > 0 ? formatDecimalHours(totalHours) : "—"} />
-          <StatCard label="Jours travaillés" value={workedDays > 0 ? `${workedDays} j` : "—"} />
+          <StatCard label={t.stats.hoursWorked} value={totalHours > 0 ? formatDecimalHours(totalHours) : "—"} />
+          <StatCard label={t.stats.daysWorked} value={workedDays > 0 ? t.stats.daysUnit(workedDays) : "—"} />
           <StatCard
-            label="Balance"
+            label={t.stats.balance}
             value={totalHours > 0 ? formatBalance(balance) : "—"}
             valueColor={balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}
           />
-          <StatCard label="Moy. par semaine" value={avgPerWeek > 0 ? formatDecimalHours(avgPerWeek) : "—"} />
+          <StatCard label={t.stats.avgPerWeek} value={avgPerWeek > 0 ? formatDecimalHours(avgPerWeek) : "—"} />
         </div>
 
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
           <div className="mb-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Heures nettes par semaine
+              {t.stats.netHoursPerWeek}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              Semaines 1 à {currentWeek} · objectif {expectedWeeklyHours}h / semaine
+              {t.stats.weekRangeGoal(currentWeek, expectedWeeklyHours)}
             </p>
           </div>
           <ThemeProvider theme={dark ? darkTheme : lightTheme}>

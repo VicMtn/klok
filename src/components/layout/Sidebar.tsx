@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { SettingsModal } from "../settings/SettingsModal";
 import { useThemeStore } from "../../store/useThemeStore";
+import { useLocaleStore } from "../../store/useLocaleStore";
+import { useT } from "../../i18n";
 
 interface NavItem {
   label: string;
@@ -40,6 +42,8 @@ function MoonIcon() {
 export function Sidebar({ items, current, onNavigate }: Props) {
   const [showSettings, setShowSettings] = useState(false);
   const { dark, toggle } = useThemeStore();
+  const toggleLocale = useLocaleStore((s) => s.toggle);
+  const t = useT();
 
   return (
     <>
@@ -68,13 +72,19 @@ export function Sidebar({ items, current, onNavigate }: Props) {
             className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
           >
             {dark ? <SunIcon /> : <MoonIcon />}
-            {dark ? "Mode clair" : "Mode sombre"}
+            {dark ? t.sidebar.lightMode : t.sidebar.darkMode}
+          </button>
+          <button
+            onClick={toggleLocale}
+            className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
+          >
+            {t.sidebar.switchLang}
           </button>
           <button
             onClick={() => setShowSettings(true)}
             className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
           >
-            Paramètres
+            {t.sidebar.settings}
           </button>
         </div>
       </nav>

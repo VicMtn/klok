@@ -22,19 +22,10 @@ const FIELD_FOR_STATE: Record<number, TimeField | null> = {
   4: null,
 };
 
-const LABEL_FOR_STATE: Record<number, string> = {
-  0: "Arrivée",
-  1: "Début pause",
-  2: "Retour pause",
-  3: "Départ",
-  4: "Journée terminée",
-};
-
 interface BadgeStoreState {
   state: BadgeState;
   hydrate: (entry: TimeEntry | undefined) => void;
   stamp: () => Promise<void>;
-  nextLabel: () => string;
 }
 
 export const useBadgeStore = create<BadgeStoreState>((set, get) => ({
@@ -49,6 +40,4 @@ export const useBadgeStore = create<BadgeStoreState>((set, get) => ({
     await useEntriesStore.getState().stampField(today(), field);
     set({ state: (state + 1) as BadgeState });
   },
-
-  nextLabel: () => LABEL_FOR_STATE[get().state],
 }));

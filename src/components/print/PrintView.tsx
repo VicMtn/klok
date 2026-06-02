@@ -2,8 +2,10 @@ import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { usePrintStore } from "../../store/usePrintStore";
 import { PrintWeekTable } from "./PrintWeekTable";
+import { useT } from "../../i18n";
 
 export function PrintView() {
+  const t = useT();
   const entries = useEntriesStore((s) => s.entries);
   const expectedHoursPerDay = useSettingsStore(
     (s) => s.settings.expected_hours_per_week / 5
@@ -18,7 +20,7 @@ export function PrintView() {
         <>
           <h1 className="text-base font-bold mb-1">{title}</h1>
           <p className="text-xs text-gray-500 mb-4">
-            Imprimé le {new Date().toLocaleDateString("fr-FR")}
+            {t.print.printedOn(new Date().toLocaleDateString(t.dateLocale))}
           </p>
           <PrintWeekTable
             dates={dates}

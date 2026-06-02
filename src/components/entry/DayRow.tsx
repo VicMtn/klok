@@ -11,6 +11,7 @@ import type { TimeEntry } from "../../types/entry";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useHolidaysStore } from "../../store/useHolidaysStore";
+import { useT } from "../../i18n";
 
 export function DayRow({ date }: { date: string }) {
   const entry = useEntriesStore((s) => s.entries.get(date));
@@ -21,6 +22,7 @@ export function DayRow({ date }: { date: string }) {
   const toggleHoliday = useHolidaysStore((s) => s.toggle);
   const updateLabel = useHolidaysStore((s) => s.updateLabel);
 
+  const t = useT();
   const [labelDraft, setLabelDraft] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -65,7 +67,7 @@ export function DayRow({ date }: { date: string }) {
         <td colSpan={5} className="px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded">
-              Férié
+              {t.entry.holiday}
             </span>
             <input
               type="text"
@@ -73,7 +75,7 @@ export function DayRow({ date }: { date: string }) {
               onChange={(e) => setLabelDraft(e.target.value)}
               onBlur={handleLabelBlur}
               onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-              placeholder="Nom du jour férié (optionnel)"
+              placeholder={t.entry.holidayPlaceholder}
               className="text-sm text-amber-700 dark:text-amber-400 bg-transparent border-none outline-none placeholder-amber-300 dark:placeholder-amber-700 flex-1 min-w-0"
             />
           </div>
@@ -91,14 +93,14 @@ export function DayRow({ date }: { date: string }) {
         <td className="px-3 py-2 text-right">
           <button
             onClick={() => setShowConfirm(true)}
-            title="Retirer le statut férié"
+            title={t.entry.removeHoliday}
             className="text-xs text-amber-400 dark:text-amber-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
           >
             ×
           </button>
           {showConfirm && (
             <ConfirmModal
-              message="Retirer le statut férié de ce jour ?"
+              message={t.entry.removeHolidayConfirm}
               onConfirm={() => { toggleHoliday(date); setShowConfirm(false); }}
               onCancel={() => setShowConfirm(false)}
             />
@@ -162,10 +164,10 @@ export function DayRow({ date }: { date: string }) {
           <CommentInput value={e.comment} onChange={handle("comment")} />
           <button
             onClick={() => toggleHoliday(date)}
-            title="Marquer comme jour férié"
+            title={t.entry.markHoliday}
             className="bg-gray-100 rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 hover:text-amber-500 dark:hover:text-amber-400 transition-all shrink-0 px-1"
           >
-            Férié
+            {t.entry.holiday}
           </button>
         </div>
       </td>
