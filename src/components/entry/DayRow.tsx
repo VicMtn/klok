@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TimeInput } from "./TimeInput";
 import { CommentInput } from "./CommentInput";
 import { DayTotal } from "./DayTotal";
@@ -11,6 +11,7 @@ import type { TimeEntry } from "../../types/entry";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useHolidaysStore } from "../../store/useHolidaysStore";
+import { useVacationsStore } from "../../store/useVacationsStore";
 import { useT } from "../../i18n";
 
 export function DayRow({ date }: { date: string }) {
@@ -21,10 +22,13 @@ export function DayRow({ date }: { date: string }) {
   const holiday = useHolidaysStore((s) => s.holidays.get(date));
   const toggleHoliday = useHolidaysStore((s) => s.toggle);
   const updateLabel = useHolidaysStore((s) => s.updateLabel);
+  const vacation = useVacationsStore((s) => s.vacations.get(date));
+  const toggleVacation = useVacationsStore((s) => s.toggle);
 
   const t = useT();
   const [labelDraft, setLabelDraft] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showVacConfirm, setShowVacConfirm] = useState(false);
 
   const e: TimeEntry = entry ?? {
     date,
@@ -36,6 +40,7 @@ export function DayRow({ date }: { date: string }) {
   };
 
   const isHoliday = holiday !== undefined;
+  const isVacation = vacation !== undefined && !isHoliday;
   const warnings = new Set(validateEntrySequence(e).map((w) => w.field));
   const { netDecimal, breakDuration, isComplete } = calculateDay(e);
   const isToday = date === today();
@@ -54,6 +59,50 @@ export function DayRow({ date }: { date: string }) {
       setLabelDraft(null);
     }
   };
+
+  if (isVacation) {
+    return (
+      <tr className="border-b border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/60 dark:bg-emerald-900/10">
+        <td className="px-3 py-2 whitespace-nowrap">
+          <span className="text-sm font-medium capitalize text-emerald-700 dark:text-emerald-400">
+            {getDayName(date, true)}
+          </span>
+          <span className="ml-1.5 text-xs text-emerald-500/70 dark:text-emerald-500/60">{formatDisplayDate(date)}</span>
+        </td>
+        <td colSpan={5} className="px-3 py-2">
+          <span className="text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded">
+            {t.entry.vacation}
+          </span>
+        </td>
+        <td className="px-3 py-2 text-right">
+          <span className="text-sm font-mono font-medium text-emerald-600 dark:text-emerald-400">
+            {formatDecimalHours(expectedHours)}
+          </span>
+        </td>
+        <td className="px-3 py-2 text-right">
+          <span className="text-sm font-mono text-emerald-500 dark:text-emerald-500">
+            {expectedHours.toFixed(2)}
+          </span>
+        </td>
+        <td className="px-3 py-2 text-right">
+          <button
+            onClick={() => setShowVacConfirm(true)}
+            title={t.entry.removeVacation}
+            className="text-xs text-emerald-400 dark:text-emerald-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
+          >
+            ×
+          </button>
+          {showVacConfirm && (
+            <ConfirmModal
+              message={t.entry.removeVacationConfirm}
+              onConfirm={() => { toggleVacation(date); setShowVacConfirm(false); }}
+              onCancel={() => setShowVacConfirm(false)}
+            />
+          )}
+        </td>
+      </tr>
+    );
+  }
 
   if (isHoliday) {
     return (
@@ -162,15 +211,67 @@ export function DayRow({ date }: { date: string }) {
       <td className="px-3 py-2 min-w-32">
         <div className="flex items-center gap-1.5">
           <CommentInput value={e.comment} onChange={handle("comment")} />
-          <button
-            onClick={() => toggleHoliday(date)}
-            title={t.entry.markHoliday}
-            className="bg-gray-100 rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 hover:text-amber-500 dark:hover:text-amber-400 transition-all shrink-0 px-1"
-          >
-            {t.entry.holiday}
-          </button>
+          <RowMenu
+            onHoliday={() => toggleHoliday(date)}
+            onVacation={() => toggleVacation(date)}
+            holidayLabel={t.entry.markHoliday}
+            vacationLabel={t.entry.markVacation}
+          />
         </div>
       </td>
     </tr>
+  );
+}
+
+interface RowMenuProps {
+  onHoliday: () => void;
+  onVacation: () => void;
+  holidayLabel: string;
+  vacationLabel: string;
+}
+
+function RowMenu({ onHoliday, onVacation, holidayLabel, vacationLabel }: RowMenuProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="p-1 rounded text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        aria-label="menu"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="5" r="2" />
+          <circle cx="12" cy="12" r="2" />
+          <circle cx="12" cy="19" r="2" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1 w-44 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-20 py-1">
+          <button
+            onClick={() => { onHoliday(); setOpen(false); }}
+            className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
+          >
+            {holidayLabel}
+          </button>
+          <button
+            onClick={() => { onVacation(); setOpen(false); }}
+            className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
+          >
+            {vacationLabel}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

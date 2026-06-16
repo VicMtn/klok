@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart, ChartsReferenceLine } from "@mui/x-charts";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Header } from "../components/layout/Header";
-import { getEntriesForYear, getHolidaysForYear } from "../lib/db";
+import { getEntriesForYear, getHolidaysForYear, getVacationsForYear } from "../lib/db";
 import { calculateDay, calculateTotalWithHolidays, calculateBalance } from "../lib/calculations";
 import { getISOWeek } from "../lib/dateUtils";
 import { formatDecimalHours, formatBalance } from "../lib/formatting";
 import { useSettingsStore } from "../store/useSettingsStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { useT } from "../i18n";
-import type { TimeEntry, Holiday } from "../types/entry";
+import type { TimeEntry, Holiday, Vacation } from "../types/entry";
 
 const lightTheme = createTheme({ palette: { mode: "light" } });
 const darkTheme = createTheme({
@@ -23,15 +23,19 @@ const darkTheme = createTheme({
 function buildWeeklyData(
   entries: TimeEntry[],
   holidays: Holiday[],
+  vacations: Vacation[],
   upToWeek: number,
   expectedHoursPerWeek: number
 ) {
   const expectedHoursPerDay = expectedHoursPerWeek / 5;
   const weekMap = new Map<number, number>();
-  const holidayDates = new Set(holidays.map((h) => h.date));
+  const skipDates = new Set([
+    ...holidays.map((h) => h.date),
+    ...vacations.map((v) => v.date),
+  ]);
 
   for (const entry of entries) {
-    if (holidayDates.has(entry.date)) continue;
+    if (skipDates.has(entry.date)) continue;
     const { netDecimal, isComplete } = calculateDay(entry);
     if (!isComplete) continue;
     const { week } = getISOWeek(new Date(entry.date + "T00:00:00"));
@@ -47,6 +51,13 @@ function buildWeeklyData(
     }
   }
 
+  for (const vacation of vacations) {
+    const { week } = getISOWeek(new Date(vacation.date + "T00:00:00"));
+    if (week >= 1 && week <= upToWeek) {
+      weekMap.set(week, Math.round(((weekMap.get(week) ?? 0) + expectedHoursPerDay) * 100) / 100);
+    }
+  }
+
   return Array.from({ length: upToWeek }, (_, i) => {
     const w = i + 1;
     return { label: `S${w}`, hours: weekMap.get(w) ?? 0 };
@@ -57,8 +68,10 @@ export function StatsView() {
   const t = useT();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [vacations, setVacations] = useState<Vacation[]>([]);
   const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
   const expectedHoursPerDay = expectedHoursPerWeek / 5;
+  const vacationAllocation = useSettingsStore((s) => s.settings.vacation_days_per_year);
   const dark = useThemeStore((s) => s.dark);
 
   const now = new Date();
@@ -68,30 +81,37 @@ export function StatsView() {
   useEffect(() => {
     getEntriesForYear(year).then(setEntries);
     getHolidaysForYear(year).then(setHolidays);
+    getVacationsForYear(year).then(setVacations);
   }, [year]);
 
   const weeklyData = useMemo(
-    () => buildWeeklyData(entries, holidays, currentWeek, expectedHoursPerWeek),
-    [entries, holidays, currentWeek, expectedHoursPerWeek]
+    () => buildWeeklyData(entries, holidays, vacations, currentWeek, expectedHoursPerWeek),
+    [entries, holidays, vacations, currentWeek, expectedHoursPerWeek]
   );
 
   const totalHours = useMemo(
-    () => calculateTotalWithHolidays(entries, holidays, expectedHoursPerDay),
-    [entries, holidays, expectedHoursPerDay]
+    () => calculateTotalWithHolidays(entries, holidays, expectedHoursPerDay, vacations),
+    [entries, holidays, vacations, expectedHoursPerDay]
   );
 
   const balance = useMemo(
-    () => calculateBalance(entries, expectedHoursPerDay, holidays),
-    [entries, holidays, expectedHoursPerDay]
+    () => calculateBalance(entries, expectedHoursPerDay, holidays, vacations),
+    [entries, holidays, vacations, expectedHoursPerDay]
   );
 
   const workedDays = useMemo(() => {
-    const holidayDates = new Set(holidays.map((h) => h.date));
+    const skipDates = new Set([
+      ...holidays.map((h) => h.date),
+      ...vacations.map((v) => v.date),
+    ]);
     const regularDays = entries.filter(
-      (e) => !holidayDates.has(e.date) && calculateDay(e).isComplete
+      (e) => !skipDates.has(e.date) && calculateDay(e).isComplete
     ).length;
-    return regularDays + holidays.length;
-  }, [entries, holidays]);
+    return regularDays + holidays.length + vacations.length;
+  }, [entries, holidays, vacations]);
+
+  const vacationTaken = vacations.length;
+  const vacationRemaining = Math.max(0, vacationAllocation - vacationTaken);
 
   const completedWeeks = weeklyData.slice(0, currentWeek - 1);
   const workedWeeks = completedWeeks.filter((w) => w.hours > 0).length;
@@ -118,6 +138,19 @@ export function StatsView() {
             valueColor={balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}
           />
           <StatCard label={t.stats.avgPerWeek} value={avgPerWeek > 0 ? formatDecimalHours(avgPerWeek) : "—"} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard
+            label={t.stats.vacationTaken}
+            value={t.stats.daysUnit(vacationTaken)}
+            valueColor="text-emerald-600 dark:text-emerald-400"
+          />
+          <StatCard
+            label={t.stats.vacationRemaining}
+            value={t.stats.daysUnit(vacationRemaining)}
+            valueColor={vacationRemaining > 0 ? "text-gray-800 dark:text-gray-100" : "text-red-500 dark:text-red-400"}
+          />
         </div>
 
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">

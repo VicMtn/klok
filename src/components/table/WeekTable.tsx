@@ -4,13 +4,15 @@ import { TotalsRow } from "./TotalsRow";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useHolidaysStore } from "../../store/useHolidaysStore";
+import { useVacationsStore } from "../../store/useVacationsStore";
 import { useT } from "../../i18n";
-import type { TimeEntry, Holiday } from "../../types/entry";
+import type { TimeEntry, Holiday, Vacation } from "../../types/entry";
 
 export function WeekTable({ dates }: { dates: string[] }) {
   const t = useT();
   const entriesMap = useEntriesStore((s) => s.entries);
   const holidaysMap = useHolidaysStore((s) => s.holidays);
+  const vacationsMap = useVacationsStore((s) => s.vacations);
   const expectedHoursPerDay = useSettingsStore(
     (s) => s.settings.expected_hours_per_week / 5
   );
@@ -37,6 +39,11 @@ export function WeekTable({ dates }: { dates: string[] }) {
     [holidaysMap, dates]
   );
 
+  const vacations = useMemo(
+    () => dates.map((d) => vacationsMap.get(d)).filter((v): v is Vacation => v !== undefined),
+    [vacationsMap, dates]
+  );
+
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
       <table className="w-full text-left border-collapse">
@@ -61,6 +68,7 @@ export function WeekTable({ dates }: { dates: string[] }) {
           <TotalsRow
             entries={entries}
             holidays={holidays}
+            vacations={vacations}
             expectedHoursPerDay={expectedHoursPerDay}
             colSpan={6}
           />

@@ -13,6 +13,7 @@ export function AppShell({ children, currentPage, onNavigate }: Props) {
   const navItems = [
     { label: t.nav.week, href: "week" },
     { label: t.nav.month, href: "month" },
+    { label: t.nav.vacation, href: "vacation" },
     { label: t.nav.stats, href: "stats" },
   ];
 

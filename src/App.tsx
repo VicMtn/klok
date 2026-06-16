@@ -5,6 +5,7 @@ import { AppShell } from "./components/layout/AppShell";
 import { WeekView } from "./pages/WeekView";
 import { MonthView } from "./pages/MonthView";
 import { StatsView } from "./pages/StatsView";
+import { VacationView } from "./pages/VacationView";
 import { PrintView } from "./components/print/PrintView";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { useBadgeStore } from "./store/useBadgeStore";
@@ -12,7 +13,7 @@ import { useLocaleStore } from "./store/useLocaleStore";
 import { getT } from "./i18n";
 import { getISOWeek } from "./lib/dateUtils";
 
-type Page = "week" | "month" | "stats";
+type Page = "week" | "month" | "vacation" | "stats";
 
 function App() {
   const load = useSettingsStore((s) => s.load);
@@ -82,6 +83,8 @@ function App() {
             month={monthNav.month}
             onNavigate={(year, month) => setMonthNav({ year, month })}
           />
+        ) : page === "vacation" ? (
+          <VacationView />
         ) : (
           <StatsView />
         )}

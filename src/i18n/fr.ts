@@ -3,6 +3,7 @@ export const fr = {
     week: "Semaine",
     month: "Mois",
     stats: "Statistiques",
+    vacation: "Vacances",
   },
   sidebar: {
     lightMode: "Mode clair",
@@ -13,6 +14,7 @@ export const fr = {
   settings: {
     title: "Paramètres",
     hoursPerWeek: "Heures attendues par semaine",
+    vacationDaysPerYear: "Jours de vacances par année",
     cancel: "Annuler",
     save: "Enregistrer",
   },
@@ -38,6 +40,10 @@ export const fr = {
     removeHoliday: "Retirer le statut férié",
     removeHolidayConfirm: "Retirer le statut férié de ce jour ?",
     markHoliday: "Marquer comme jour férié",
+    vacation: "Vacances",
+    removeVacation: "Retirer le statut vacances",
+    removeVacationConfirm: "Retirer le statut vacances de ce jour ?",
+    markVacation: "Marquer comme jour de vacances",
   },
   header: {
     print: "Imprimer",
@@ -66,6 +72,20 @@ export const fr = {
     netHoursPerWeek: "Heures nettes par semaine",
     weekRangeGoal: (w: number, h: number) => `Semaines 1 à ${w} · objectif ${h}h / semaine`,
     daysUnit: (n: number) => `${n} j`,
+    vacationTaken: "Vacances prises",
+    vacationRemaining: "Vacances restantes",
+  },
+  vacation: {
+    title: "Vacances",
+    allocation: "Allocation annuelle",
+    taken: "Jours pris",
+    remaining: "Jours restants",
+    daysUnit: (n: number) => `${n} j`,
+    daysListTitle: "Jours de vacances posés",
+    noVacations: "Aucun jour de vacances posé pour cette année.",
+    removeDay: "Retirer ce jour",
+    yearLabel: (y: number) => `Année ${y}`,
+    progress: (taken: number, total: number) => `${taken} / ${total} jours`,
   },
   print: {
     printedOn: (date: string) => `Imprimé le ${date}`,

@@ -17,6 +17,11 @@ export interface Holiday {
   label: string | null;
 }
 
+export interface Vacation {
+  id?: number;
+  date: string;
+}
+
 export interface DayCalculation {
   gross: number;
   breakDuration: number;

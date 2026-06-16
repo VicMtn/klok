@@ -4,6 +4,7 @@ import { getAllSettings, setSetting } from "../lib/db";
 interface Settings {
   expected_hours_per_week: number;
   week_starts_on: number;
+  vacation_days_per_year: number;
 }
 
 interface SettingsState {
@@ -16,6 +17,7 @@ interface SettingsState {
 const defaults: Settings = {
   expected_hours_per_week: 37.5,
   week_starts_on: 1,
+  vacation_days_per_year: 20,
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -32,6 +34,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         week_starts_on: raw.week_starts_on
           ? parseInt(raw.week_starts_on, 10)
           : defaults.week_starts_on,
+        vacation_days_per_year: raw.vacation_days_per_year
+          ? parseFloat(raw.vacation_days_per_year)
+          : defaults.vacation_days_per_year,
       },
       loaded: true,
     });

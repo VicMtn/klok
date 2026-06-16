@@ -6,11 +6,16 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const { settings, update } = useSettingsStore();
   const t = useT();
   const [hours, setHours] = useState(String(settings.expected_hours_per_week));
+  const [vacationDays, setVacationDays] = useState(String(settings.vacation_days_per_year));
 
   const handleSave = async () => {
     const parsed = parseFloat(hours);
     if (!isNaN(parsed) && parsed > 0 && parsed <= 168) {
       await update("expected_hours_per_week", parsed);
+    }
+    const parsedDays = parseFloat(vacationDays);
+    if (!isNaN(parsedDays) && parsedDays >= 0 && parsedDays <= 366) {
+      await update("vacation_days_per_year", parsedDays);
     }
     onClose();
   };
@@ -36,6 +41,20 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               max="168"
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
             />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1.5">
+              {t.settings.vacationDaysPerYear}
+            </label>
+            <select
+              value={vacationDays}
+              onChange={(e) => setVacationDays(e.target.value)}
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
+            >
+              <option value="20">20</option>
+              <option value="25">25</option>
+              <option value="30">30</option>
+            </select>
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-6">

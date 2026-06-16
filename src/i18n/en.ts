@@ -3,6 +3,7 @@ export const en = {
     week: "Week",
     month: "Month",
     stats: "Statistics",
+    vacation: "Vacation",
   },
   sidebar: {
     lightMode: "Light mode",
@@ -13,6 +14,7 @@ export const en = {
   settings: {
     title: "Settings",
     hoursPerWeek: "Expected hours per week",
+    vacationDaysPerYear: "Vacation days per year",
     cancel: "Cancel",
     save: "Save",
   },
@@ -38,6 +40,10 @@ export const en = {
     removeHoliday: "Remove holiday status",
     removeHolidayConfirm: "Remove holiday status for this day?",
     markHoliday: "Mark as holiday",
+    vacation: "Vacation",
+    removeVacation: "Remove vacation status",
+    removeVacationConfirm: "Remove vacation status for this day?",
+    markVacation: "Mark as vacation day",
   },
   header: {
     print: "Print",
@@ -66,6 +72,20 @@ export const en = {
     netHoursPerWeek: "Net hours per week",
     weekRangeGoal: (w: number, h: number) => `Weeks 1 to ${w} · target ${h}h / week`,
     daysUnit: (n: number) => `${n} d`,
+    vacationTaken: "Vacation taken",
+    vacationRemaining: "Vacation remaining",
+  },
+  vacation: {
+    title: "Vacation",
+    allocation: "Annual allocation",
+    taken: "Days taken",
+    remaining: "Days remaining",
+    daysUnit: (n: number) => `${n} d`,
+    daysListTitle: "Booked vacation days",
+    noVacations: "No vacation days booked for this year.",
+    removeDay: "Remove this day",
+    yearLabel: (y: number) => `Year ${y}`,
+    progress: (taken: number, total: number) => `${taken} / ${total} days`,
   },
   print: {
     printedOn: (date: string) => `Printed on ${date}`,

@@ -1,4 +1,4 @@
-import type { TimeEntry, DayCalculation, Holiday } from "../types/entry";
+import type { TimeEntry, DayCalculation, Holiday, Vacation } from "../types/entry";
 import { timeToMinutes } from "./formatting";
 
 export function calculateDay(entry: TimeEntry): DayCalculation {
@@ -30,24 +30,32 @@ export function calculateTotal(entries: TimeEntry[]): number {
 export function calculateBalance(
   entries: TimeEntry[],
   expectedHoursPerDay: number,
-  holidays: Holiday[] = []
+  holidays: Holiday[] = [],
+  vacations: Vacation[] = []
 ): number {
-  const holidayDates = new Set(holidays.map((h) => h.date));
-  const nonHolidayEntries = entries.filter((e) => !holidayDates.has(e.date));
-  const workedDays = nonHolidayEntries.filter((e) => calculateDay(e).isComplete).length;
+  const skipDates = new Set([
+    ...holidays.map((h) => h.date),
+    ...vacations.map((v) => v.date),
+  ]);
+  const workEntries = entries.filter((e) => !skipDates.has(e.date));
+  const workedDays = workEntries.filter((e) => calculateDay(e).isComplete).length;
   const expected = workedDays * expectedHoursPerDay;
-  const actual = calculateTotal(nonHolidayEntries);
+  const actual = calculateTotal(workEntries);
   return Math.round((actual - expected) * 100) / 100;
 }
 
 export function calculateTotalWithHolidays(
   entries: TimeEntry[],
   holidays: Holiday[],
-  expectedHoursPerDay: number
+  expectedHoursPerDay: number,
+  vacations: Vacation[] = []
 ): number {
-  const holidayDates = new Set(holidays.map((h) => h.date));
-  const nonHolidayEntries = entries.filter((e) => !holidayDates.has(e.date));
-  const worked = calculateTotal(nonHolidayEntries);
-  const holidayHours = holidays.length * expectedHoursPerDay;
-  return Math.round((worked + holidayHours) * 100) / 100;
+  const skipDates = new Set([
+    ...holidays.map((h) => h.date),
+    ...vacations.map((v) => v.date),
+  ]);
+  const workEntries = entries.filter((e) => !skipDates.has(e.date));
+  const worked = calculateTotal(workEntries);
+  const extraHours = (holidays.length + vacations.length) * expectedHoursPerDay;
+  return Math.round((worked + extraHours) * 100) / 100;
 }

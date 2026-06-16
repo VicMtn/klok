@@ -87,6 +87,18 @@ pub fn run() {
             sql: include_str!("../migrations/003_holidays_table.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "hours_per_week",
+            sql: include_str!("../migrations/004_hours_per_week.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 5,
+            description: "vacations_table",
+            sql: include_str!("../migrations/005_vacations_table.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()
