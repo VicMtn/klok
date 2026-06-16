@@ -36,25 +36,25 @@ export const useVacationsStore = create<VacationsState>((set, get) => ({
 
   toggle: async (date) => {
     const existing = get().vacations.get(date);
+    // Optimistic update first so the UI reacts immediately
+    set((state) => {
+      const next = new Map(state.vacations);
+      if (existing) next.delete(date);
+      else next.set(date, { date });
+      return { vacations: next };
+    });
     try {
-      if (existing) {
-        await deleteVacation(date);
-        set((state) => {
-          const next = new Map(state.vacations);
-          next.delete(date);
-          return { vacations: next };
-        });
-      } else {
-        await upsertVacation(date);
-        set((state) => {
-          const next = new Map(state.vacations);
-          next.set(date, { date });
-          return { vacations: next };
-        });
-      }
+      if (existing) await deleteVacation(date);
+      else await upsertVacation(date);
     } catch (err) {
       console.error("vacation toggle failed", err);
-      throw err;
+      // Revert on failure
+      set((state) => {
+        const next = new Map(state.vacations);
+        if (existing) next.set(date, existing);
+        else next.delete(date);
+        return { vacations: next };
+      });
     }
   },
 }));

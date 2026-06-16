@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { TimeInput } from "./TimeInput";
 import { CommentInput } from "./CommentInput";
 import { DayTotal } from "./DayTotal";
@@ -232,22 +233,40 @@ interface RowMenuProps {
 
 function RowMenu({ onHoliday, onVacation, holidayLabel, vacationLabel }: RowMenuProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        btnRef.current?.contains(target) ||
+        menuRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  const handleToggle = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    }
+    setOpen((v) => !v);
+  };
+
   return (
-    <div className="relative shrink-0" ref={ref}>
+    <>
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="p-1 rounded text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        ref={btnRef}
+        onClick={handleToggle}
+        className="p-1 rounded text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
         aria-label="menu"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -256,8 +275,12 @@ function RowMenu({ onHoliday, onVacation, holidayLabel, vacationLabel }: RowMenu
           <circle cx="12" cy="19" r="2" />
         </svg>
       </button>
-      {open && (
-        <div className="absolute right-0 mt-1 w-44 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-20 py-1">
+      {open && pos && createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 50 }}
+          className="w-44 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg py-1"
+        >
           <button
             onClick={() => { onHoliday(); setOpen(false); }}
             className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-700 dark:hover:text-amber-400 transition-colors"
@@ -270,8 +293,9 @@ function RowMenu({ onHoliday, onVacation, holidayLabel, vacationLabel }: RowMenu
           >
             {vacationLabel}
           </button>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
