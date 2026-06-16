@@ -18,9 +18,12 @@
 
 - **Week and month views** — arrival, break start/end, departure, net hours, balance per day
 - **Public holidays** — mark any day as a holiday; it counts toward your expected hours automatically
-- **Statistics page** — weekly bar chart for the current year, with total hours, worked days, balance, and weekly average
+- **Vacation tracking** — dedicated page modelled on the Swiss system (4, 5 or 6 weeks per year: 20 / 25 / 30 days); mark any day as a vacation day from the row menu and it counts toward your expected hours
+- **Per-row dropdown** — a single ⋮ button in each day row exposes both "mark as holiday" and "mark as vacation"
+- **Statistics page** — weekly bar chart for the current year, with total hours, worked days, balance, weekly average, and vacation taken / remaining
 - **Expected hours per week** — configurable target (default 37.5h), used to compute daily and weekly balance
 - **Notes** per day entry
+- **i18n** — French / English, switchable from the sidebar
 - **Dark mode** — toggle in the sidebar, persisted across sessions
 - **Print** week or month to PDF via the native print dialog
 - **SQLite** — all data stored locally in `~/Library/Application Support/com.klok.app`
