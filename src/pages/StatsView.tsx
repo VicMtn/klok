@@ -110,7 +110,8 @@ export function StatsView() {
     return regularDays + holidays.length + vacations.length;
   }, [entries, holidays, vacations]);
 
-  const vacationTaken = vacations.length;
+  // Recovery days come out of overtime, not the annual allocation.
+  const vacationTaken = vacations.filter((v) => v.type !== "overtime").length;
   const vacationRemaining = Math.max(0, vacationAllocation - vacationTaken);
 
   const completedWeeks = weeklyData.slice(0, currentWeek - 1);

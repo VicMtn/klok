@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Header } from "../components/layout/Header";
 import { useVacationsStore } from "../store/useVacationsStore";
 import { useSettingsStore } from "../store/useSettingsStore";
+import { getEntriesForYear, getHolidaysForYear } from "../lib/db";
+import { calculateBalance } from "../lib/calculations";
 import { getDayName, formatDisplayDate } from "../lib/dateUtils";
+import { formatDecimalHours, formatBalance } from "../lib/formatting";
+import type { TimeEntry, Holiday } from "../types/entry";
 import { useT } from "../i18n";
 
 export function VacationView() {
@@ -10,13 +14,20 @@ export function VacationView() {
   const vacationsMap = useVacationsStore((s) => s.vacations);
   const loadYear = useVacationsStore((s) => s.loadYear);
   const toggle = useVacationsStore((s) => s.toggle);
+  const setVacation = useVacationsStore((s) => s.setVacation);
   const allocation = useSettingsStore((s) => s.settings.vacation_days_per_year);
+  const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
+  const expectedHoursPerDay = expectedHoursPerWeek / 5;
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   useEffect(() => {
     loadYear(year);
+    getEntriesForYear(year).then(setEntries);
+    getHolidaysForYear(year).then(setHolidays);
   }, [year]);
 
   const vacationsForYear = useMemo(() => {
@@ -26,9 +37,19 @@ export function VacationView() {
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [vacationsMap, year]);
 
-  const taken = vacationsForYear.length;
+  // Only paid leave is drawn from the annual allocation; recovery days are paid
+  // out of overtime instead.
+  const taken = vacationsForYear.filter((v) => v.type !== "overtime").length;
+  const overtimeDays = vacationsForYear.filter((v) => v.type === "overtime").length;
+  const overtimeHours = overtimeDays * expectedHoursPerDay;
   const remaining = Math.max(0, allocation - taken);
   const progressPct = allocation > 0 ? Math.min(100, (taken / allocation) * 100) : 0;
+
+  // Remaining overtime balance after the recovery days already booked this year.
+  const overtimeBalance = useMemo(
+    () => calculateBalance(entries, expectedHoursPerDay, holidays, vacationsForYear),
+    [entries, holidays, vacationsForYear, expectedHoursPerDay]
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -69,6 +90,20 @@ export function VacationView() {
           />
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard
+            label={t.vacation.overtimeBalance}
+            value={formatBalance(overtimeBalance)}
+            valueColor={overtimeBalance >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-red-500 dark:text-red-400"}
+            hint={t.vacation.overtimeBalanceHint}
+          />
+          <StatCard
+            label={t.vacation.overtimeTaken}
+            value={overtimeDays > 0 ? t.vacation.overtimeHours(formatDecimalHours(overtimeHours), overtimeDays) : "—"}
+            valueColor="text-indigo-600 dark:text-indigo-400"
+          />
+        </div>
+
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
@@ -98,25 +133,41 @@ export function VacationView() {
             </div>
           ) : (
             <ul className="divide-y divide-gray-100 dark:divide-gray-700/50">
-              {vacationsForYear.map((v) => (
-                <li key={v.date} className="flex items-center justify-between px-5 py-2.5">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-medium capitalize text-gray-700 dark:text-gray-200">
-                      {getDayName(v.date)}
-                    </span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {formatDisplayDate(v.date)}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => toggle(v.date)}
-                    title={t.vacation.removeDay}
-                    className="text-xs text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-2"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
+              {vacationsForYear.map((v) => {
+                const isOvertime = v.type === "overtime";
+                return (
+                  <li key={v.date} className="flex items-center justify-between px-5 py-2.5">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm font-medium capitalize text-gray-700 dark:text-gray-200">
+                        {getDayName(v.date)}
+                      </span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {formatDisplayDate(v.date)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setVacation(v.date, isOvertime ? "paid" : "overtime")}
+                        title={isOvertime ? t.vacation.switchToPaid : t.vacation.switchToOvertime}
+                        className={`text-xs font-semibold px-1.5 py-0.5 rounded transition-colors ${
+                          isOvertime
+                            ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/60"
+                            : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/60"
+                        }`}
+                      >
+                        {isOvertime ? t.vacation.typeOvertime : t.vacation.typePaid}
+                      </button>
+                      <button
+                        onClick={() => toggle(v.date)}
+                        title={t.vacation.removeDay}
+                        className="text-xs text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-2"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -129,15 +180,18 @@ function StatCard({
   label,
   value,
   valueColor = "text-gray-800 dark:text-gray-100",
+  hint,
 }: {
   label: string;
   value: string;
   valueColor?: string;
+  hint?: string;
 }) {
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3.5">
       <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">{label}</p>
       <p className={`mt-1.5 text-2xl font-semibold font-mono ${valueColor}`}>{value}</p>
+      {hint && <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500 normal-case">{hint}</p>}
     </div>
   );
 }

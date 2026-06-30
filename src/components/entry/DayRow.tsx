@@ -25,6 +25,7 @@ export function DayRow({ date }: { date: string }) {
   const updateLabel = useHolidaysStore((s) => s.updateLabel);
   const vacation = useVacationsStore((s) => s.vacations.get(date));
   const toggleVacation = useVacationsStore((s) => s.toggle);
+  const setVacation = useVacationsStore((s) => s.setVacation);
 
   const t = useT();
   const [labelDraft, setLabelDraft] = useState<string | null>(null);
@@ -62,40 +63,71 @@ export function DayRow({ date }: { date: string }) {
   };
 
   if (isVacation) {
+    const isOvertime = vacation!.type === "overtime";
+    // Overtime-recovery days are paid out of accumulated overtime, so they read
+    // as a "minus" against the balance — shown in indigo to set them apart from
+    // regular (emerald) annual leave.
+    const c = isOvertime
+      ? {
+          row: "border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/60 dark:bg-indigo-900/10",
+          day: "text-indigo-700 dark:text-indigo-400",
+          sub: "text-indigo-500/70 dark:text-indigo-500/60",
+          badge: "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400",
+          total: "text-indigo-600 dark:text-indigo-400",
+          dec: "text-indigo-500 dark:text-indigo-500",
+          remove: "text-indigo-400 dark:text-indigo-600",
+          label: t.entry.overtime,
+          removeTitle: t.entry.removeOvertime,
+          removeConfirm: t.entry.removeOvertimeConfirm,
+          sign: "-",
+        }
+      : {
+          row: "border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/60 dark:bg-emerald-900/10",
+          day: "text-emerald-700 dark:text-emerald-400",
+          sub: "text-emerald-500/70 dark:text-emerald-500/60",
+          badge: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400",
+          total: "text-emerald-600 dark:text-emerald-400",
+          dec: "text-emerald-500 dark:text-emerald-500",
+          remove: "text-emerald-400 dark:text-emerald-600",
+          label: t.entry.vacation,
+          removeTitle: t.entry.removeVacation,
+          removeConfirm: t.entry.removeVacationConfirm,
+          sign: "",
+        };
     return (
-      <tr className="border-b border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/60 dark:bg-emerald-900/10">
+      <tr className={`border-b ${c.row}`}>
         <td className="px-3 py-2 whitespace-nowrap">
-          <span className="text-sm font-medium capitalize text-emerald-700 dark:text-emerald-400">
+          <span className={`text-sm font-medium capitalize ${c.day}`}>
             {getDayName(date, true)}
           </span>
-          <span className="ml-1.5 text-xs text-emerald-500/70 dark:text-emerald-500/60">{formatDisplayDate(date)}</span>
+          <span className={`ml-1.5 text-xs ${c.sub}`}>{formatDisplayDate(date)}</span>
         </td>
         <td colSpan={5} className="px-3 py-2">
-          <span className="text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded">
-            {t.entry.vacation}
+          <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${c.badge}`}>
+            {c.label}
           </span>
         </td>
         <td className="px-3 py-2 text-right">
-          <span className="text-sm font-mono font-medium text-emerald-600 dark:text-emerald-400">
-            {formatDecimalHours(expectedHours)}
+          <span className={`text-sm font-mono font-medium ${c.total}`}>
+            {c.sign}{formatDecimalHours(expectedHours)}
           </span>
         </td>
         <td className="px-3 py-2 text-right">
-          <span className="text-sm font-mono text-emerald-500 dark:text-emerald-500">
-            {expectedHours.toFixed(2)}
+          <span className={`text-sm font-mono ${c.dec}`}>
+            {c.sign}{expectedHours.toFixed(2)}
           </span>
         </td>
         <td className="px-3 py-2 text-right">
           <button
             onClick={() => setShowVacConfirm(true)}
-            title={t.entry.removeVacation}
-            className="text-xs text-emerald-400 dark:text-emerald-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
+            title={c.removeTitle}
+            className={`text-xs ${c.remove} hover:text-red-500 dark:hover:text-red-400 transition-colors px-1`}
           >
             ×
           </button>
           {showVacConfirm && (
             <ConfirmModal
-              message={t.entry.removeVacationConfirm}
+              message={c.removeConfirm}
               onConfirm={() => { toggleVacation(date); setShowVacConfirm(false); }}
               onCancel={() => setShowVacConfirm(false)}
             />
@@ -215,8 +247,10 @@ export function DayRow({ date }: { date: string }) {
           <RowMenu
             onHoliday={() => toggleHoliday(date)}
             onVacation={() => toggleVacation(date)}
+            onOvertime={() => setVacation(date, "overtime")}
             holidayLabel={t.entry.markHoliday}
             vacationLabel={t.entry.markVacation}
+            overtimeLabel={t.entry.markOvertime}
           />
         </div>
       </td>
@@ -227,11 +261,13 @@ export function DayRow({ date }: { date: string }) {
 interface RowMenuProps {
   onHoliday: () => void;
   onVacation: () => void;
+  onOvertime: () => void;
   holidayLabel: string;
   vacationLabel: string;
+  overtimeLabel: string;
 }
 
-function RowMenu({ onHoliday, onVacation, holidayLabel, vacationLabel }: RowMenuProps) {
+function RowMenu({ onHoliday, onVacation, onOvertime, holidayLabel, vacationLabel, overtimeLabel }: RowMenuProps) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -292,6 +328,12 @@ function RowMenu({ onHoliday, onVacation, holidayLabel, vacationLabel }: RowMenu
             className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
           >
             {vacationLabel}
+          </button>
+          <button
+            onClick={() => { onOvertime(); setOpen(false); }}
+            className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors"
+          >
+            {overtimeLabel}
           </button>
         </div>,
         document.body
