@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Vacation } from "../types/entry";
+import type { Vacation, VacationType } from "../types/entry";
 import {
   getVacationsForRange,
   getVacationsForYear,
@@ -12,6 +12,7 @@ interface VacationsState {
   loadRange: (start: string, end: string) => Promise<void>;
   loadYear: (year: number) => Promise<void>;
   toggle: (date: string) => Promise<void>;
+  setVacation: (date: string, type: VacationType) => Promise<void>;
 }
 
 export const useVacationsStore = create<VacationsState>((set, get) => ({
@@ -40,15 +41,36 @@ export const useVacationsStore = create<VacationsState>((set, get) => ({
     set((state) => {
       const next = new Map(state.vacations);
       if (existing) next.delete(date);
-      else next.set(date, { date });
+      else next.set(date, { date, type: "paid" });
       return { vacations: next };
     });
     try {
       if (existing) await deleteVacation(date);
-      else await upsertVacation(date);
+      else await upsertVacation(date, "paid");
     } catch (err) {
       console.error("vacation toggle failed", err);
       // Revert on failure
+      set((state) => {
+        const next = new Map(state.vacations);
+        if (existing) next.set(date, existing);
+        else next.delete(date);
+        return { vacations: next };
+      });
+    }
+  },
+
+  // Add a vacation of the given type, or switch an existing one to it.
+  setVacation: async (date, type) => {
+    const existing = get().vacations.get(date);
+    set((state) => {
+      const next = new Map(state.vacations);
+      next.set(date, { ...existing, date, type });
+      return { vacations: next };
+    });
+    try {
+      await upsertVacation(date, type);
+    } catch (err) {
+      console.error("vacation set failed", err);
       set((state) => {
         const next = new Map(state.vacations);
         if (existing) next.set(date, existing);

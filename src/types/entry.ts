@@ -17,9 +17,14 @@ export interface Holiday {
   label: string | null;
 }
 
+export type VacationType = "paid" | "overtime";
+
 export interface Vacation {
   id?: number;
   date: string;
+  // "paid" draws on the annual allocation; "overtime" draws on accumulated
+  // overtime hours ("heures supplémentaires") instead.
+  type: VacationType;
 }
 
 export interface DayCalculation {

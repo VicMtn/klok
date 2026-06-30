@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { TimeEntry, Holiday, Vacation } from "../types/entry";
+import type { TimeEntry, Holiday, Vacation, VacationType } from "../types/entry";
 
 let _db: Database | null = null;
 
@@ -90,10 +90,14 @@ export async function getVacationsForYear(year: number): Promise<Vacation[]> {
   );
 }
 
-export async function upsertVacation(date: string): Promise<void> {
+export async function upsertVacation(
+  date: string,
+  type: VacationType = "paid"
+): Promise<void> {
   await (await db()).execute(
-    "INSERT OR IGNORE INTO vacations (date) VALUES ($1)",
-    [date]
+    `INSERT INTO vacations (date, type) VALUES ($1, $2)
+     ON CONFLICT(date) DO UPDATE SET type = $2`,
+    [date, type]
   );
 }
 
