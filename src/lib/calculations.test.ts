@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calculateDay, calculateTotal, calculateBalance, calculateTotalWithHolidays } from "./calculations";
-import type { TimeEntry, Holiday } from "../types/entry";
+import type { TimeEntry, Holiday, Vacation } from "../types/entry";
 
 function entry(overrides: Partial<TimeEntry> = {}): TimeEntry {
   return {
@@ -16,6 +16,10 @@ function entry(overrides: Partial<TimeEntry> = {}): TimeEntry {
 
 function holiday(date: string): Holiday {
   return { date, label: null };
+}
+
+function vacation(date: string, type: Vacation["type"] = "paid"): Vacation {
+  return { date, type };
 }
 
 describe("calculateDay", () => {
@@ -141,6 +145,19 @@ describe("calculateBalance", () => {
     const entries = [entry({ arrival: "09:00", departure: "17:00" })];
     expect(calculateBalance(entries, 40 / 5)).toBe(0);
   });
+
+  it("n'affecte pas le solde pour un jour de vacances payées", () => {
+    const entries = [entry({ arrival: "09:00", departure: "17:00" })];
+    const vacations = [vacation("2024-01-16", "paid")];
+    expect(calculateBalance(entries, 8, [], vacations)).toBe(0);
+  });
+
+  it("déduit une journée du solde pour une récupération (heures sup.)", () => {
+    // +1h travaillée, puis une journée de récup. qui consomme 8h d'avance
+    const entries = [entry({ arrival: "09:00", departure: "18:00" })];
+    const vacations = [vacation("2024-01-16", "overtime")];
+    expect(calculateBalance(entries, 8, [], vacations)).toBe(1 - 8);
+  });
 });
 
 describe("calculateTotalWithHolidays", () => {
@@ -161,5 +178,17 @@ describe("calculateTotalWithHolidays", () => {
 
   it("retourne 0 sans entrées ni fériés", () => {
     expect(calculateTotalWithHolidays([], [], 8)).toBe(0);
+  });
+
+  it("crédite les heures d'un jour de vacances payées", () => {
+    const entries = [entry({ arrival: "09:00", departure: "17:00" })];
+    const vacations = [vacation("2024-01-16", "paid")];
+    expect(calculateTotalWithHolidays(entries, [], 8, vacations)).toBe(16);
+  });
+
+  it("ne crédite pas d'heures pour une récupération (déjà travaillées)", () => {
+    const entries = [entry({ arrival: "09:00", departure: "17:00" })];
+    const vacations = [vacation("2024-01-16", "overtime")];
+    expect(calculateTotalWithHolidays(entries, [], 8, vacations)).toBe(8);
   });
 });

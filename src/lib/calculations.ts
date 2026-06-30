@@ -39,7 +39,11 @@ export function calculateBalance(
   ]);
   const workEntries = entries.filter((e) => !skipDates.has(e.date));
   const workedDays = workEntries.filter((e) => calculateDay(e).isComplete).length;
-  const expected = workedDays * expectedHoursPerDay;
+  // Overtime-recovery days are paid out of the accumulated balance: each one
+  // counts as an expected day with no hours worked, so it spends a day's worth
+  // of overtime.
+  const overtimeDays = vacations.filter((v) => v.type === "overtime").length;
+  const expected = (workedDays + overtimeDays) * expectedHoursPerDay;
   const actual = calculateTotal(workEntries);
   return Math.round((actual - expected) * 100) / 100;
 }
@@ -56,6 +60,9 @@ export function calculateTotalWithHolidays(
   ]);
   const workEntries = entries.filter((e) => !skipDates.has(e.date));
   const worked = calculateTotal(workEntries);
-  const extraHours = (holidays.length + vacations.length) * expectedHoursPerDay;
+  // Paid leave and holidays credit a day's worth of hours. Overtime-recovery
+  // days don't: those hours were already worked (and counted) earlier.
+  const paidVacationDays = vacations.filter((v) => v.type !== "overtime").length;
+  const extraHours = (holidays.length + paidVacationDays) * expectedHoursPerDay;
   return Math.round((worked + extraHours) * 100) / 100;
 }
