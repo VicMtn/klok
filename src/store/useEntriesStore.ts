@@ -5,18 +5,21 @@ import {
   getEntriesForMonth,
   updateEntryField,
 } from "../lib/db";
+import { reportWriteError } from "../lib/errors";
 
 interface EntriesState {
   entries: Map<string, TimeEntry>;
   loading: boolean;
   loadWeek: (weekStart: string, weekEnd: string) => Promise<void>;
   loadMonth: (year: number, month: number) => Promise<void>;
+  // Never rejects: on DB failure it rolls back, notifies the user, and
+  // resolves to `false` so state machines (badge) don't advance on a lost write.
   updateField: (
     date: string,
     field: keyof TimeEntry,
     value: string | null
-  ) => Promise<void>;
-  stampField: (date: string, field: keyof TimeEntry) => Promise<void>;
+  ) => Promise<boolean>;
+  stampField: (date: string, field: keyof TimeEntry) => Promise<boolean>;
 }
 
 export const useEntriesStore = create<EntriesState>((set, get) => ({
@@ -54,19 +57,21 @@ export const useEntriesStore = create<EntriesState>((set, get) => ({
 
     try {
       await updateEntryField(date, field as string, value);
+      return true;
     } catch (err) {
+      reportWriteError("entry field update failed", err);
       set((state) => {
         const next = new Map(state.entries);
         next.set(date, existing);
         return { entries: next };
       });
-      throw err;
+      return false;
     }
   },
 
   stampField: async (date, field) => {
     const now = new Date();
     const value = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    await get().updateField(date, field, value);
+    return get().updateField(date, field, value);
   },
 }));

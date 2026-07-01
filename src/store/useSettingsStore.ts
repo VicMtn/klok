@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getAllSettings, setSetting } from "../lib/db";
+import { reportWriteError } from "../lib/errors";
 
 interface Settings {
   expected_hours_per_week: number;
@@ -20,7 +21,7 @@ const defaults: Settings = {
   vacation_days_per_year: 20,
 };
 
-export const useSettingsStore = create<SettingsState>((set) => ({
+export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaults,
   loaded: false,
 
@@ -43,7 +44,13 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   update: async (key, value) => {
-    await setSetting(key, String(value));
+    const previous = get().settings[key];
     set((state) => ({ settings: { ...state.settings, [key]: value } }));
+    try {
+      await setSetting(key, String(value));
+    } catch (err) {
+      reportWriteError("setting update failed", err);
+      set((state) => ({ settings: { ...state.settings, [key]: previous } }));
+    }
   },
 }));

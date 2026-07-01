@@ -110,5 +110,8 @@ export const fr = {
   comment: {
     placeholder: "Note...",
   },
+  errors: {
+    saveFailed: "Échec de l'enregistrement. Vos modifications n'ont pas été sauvegardées.",
+  },
   dateLocale: "fr-FR",
 };

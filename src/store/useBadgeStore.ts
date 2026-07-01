@@ -37,7 +37,9 @@ export const useBadgeStore = create<BadgeStoreState>((set, get) => ({
     const { state } = get();
     const field = FIELD_FOR_STATE[state];
     if (!field) return;
-    await useEntriesStore.getState().stampField(today(), field);
-    set({ state: (state + 1) as BadgeState });
+    // Only advance the badge if the write actually landed; stampField never
+    // rejects and returns false on failure (after rolling back + notifying).
+    const ok = await useEntriesStore.getState().stampField(today(), field);
+    if (ok) set({ state: (state + 1) as BadgeState });
   },
 }));

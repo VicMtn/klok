@@ -6,6 +6,7 @@ import {
   upsertSickDay,
   deleteSickDay,
 } from "../lib/db";
+import { reportWriteError } from "../lib/errors";
 
 interface SickDaysState {
   sickDays: Map<string, SickDay>;
@@ -47,7 +48,7 @@ export const useSickDaysStore = create<SickDaysState>((set, get) => ({
       if (existing) await deleteSickDay(date);
       else await upsertSickDay(date);
     } catch (err) {
-      console.error("sick day toggle failed", err);
+      reportWriteError("sick day toggle failed", err);
       // Revert on failure
       set((state) => {
         const next = new Map(state.sickDays);

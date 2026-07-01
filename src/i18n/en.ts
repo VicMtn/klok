@@ -110,5 +110,8 @@ export const en = {
   comment: {
     placeholder: "Note...",
   },
+  errors: {
+    saveFailed: "Save failed. Your changes were not stored.",
+  },
   dateLocale: "en-GB",
 };

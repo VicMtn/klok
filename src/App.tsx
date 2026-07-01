@@ -7,6 +7,7 @@ import { MonthView } from "./pages/MonthView";
 import { StatsView } from "./pages/StatsView";
 import { VacationView } from "./pages/VacationView";
 import { PrintView } from "./components/print/PrintView";
+import { ToastContainer } from "./components/ui/Toast";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { useBadgeStore } from "./store/useBadgeStore";
 import { useLocaleStore } from "./store/useLocaleStore";
@@ -90,6 +91,7 @@ function App() {
         )}
       </AppShell>
       <PrintView />
+      <ToastContainer />
     </>
   );
 }

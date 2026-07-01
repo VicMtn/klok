@@ -6,6 +6,7 @@ import {
   upsertVacation,
   deleteVacation,
 } from "../lib/db";
+import { reportWriteError } from "../lib/errors";
 
 interface VacationsState {
   vacations: Map<string, Vacation>;
@@ -48,7 +49,7 @@ export const useVacationsStore = create<VacationsState>((set, get) => ({
       if (existing) await deleteVacation(date);
       else await upsertVacation(date, "paid");
     } catch (err) {
-      console.error("vacation toggle failed", err);
+      reportWriteError("vacation toggle failed", err);
       // Revert on failure
       set((state) => {
         const next = new Map(state.vacations);
@@ -70,7 +71,7 @@ export const useVacationsStore = create<VacationsState>((set, get) => ({
     try {
       await upsertVacation(date, type);
     } catch (err) {
-      console.error("vacation set failed", err);
+      reportWriteError("vacation set failed", err);
       set((state) => {
         const next = new Map(state.vacations);
         if (existing) next.set(date, existing);

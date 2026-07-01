@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Holiday } from "../types/entry";
 import { getHolidaysForRange, getHolidaysForYear, upsertHoliday, deleteHoliday } from "../lib/db";
+import { reportWriteError } from "../lib/errors";
 
 interface HolidaysState {
   holidays: Map<string, Holiday>;
@@ -32,18 +33,23 @@ export const useHolidaysStore = create<HolidaysState>((set, get) => ({
 
   toggle: async (date) => {
     const existing = get().holidays.get(date);
-    if (existing) {
-      await deleteHoliday(date);
+    // Optimistic update first so the UI reacts immediately
+    set((state) => {
+      const next = new Map(state.holidays);
+      if (existing) next.delete(date);
+      else next.set(date, { date, label: null });
+      return { holidays: next };
+    });
+    try {
+      if (existing) await deleteHoliday(date);
+      else await upsertHoliday(date, null);
+    } catch (err) {
+      reportWriteError("holiday toggle failed", err);
+      // Revert on failure
       set((state) => {
         const next = new Map(state.holidays);
-        next.delete(date);
-        return { holidays: next };
-      });
-    } else {
-      await upsertHoliday(date, null);
-      set((state) => {
-        const next = new Map(state.holidays);
-        next.set(date, { date, label: null });
+        if (existing) next.set(date, existing);
+        else next.delete(date);
         return { holidays: next };
       });
     }
@@ -51,12 +57,22 @@ export const useHolidaysStore = create<HolidaysState>((set, get) => ({
 
   updateLabel: async (date, label) => {
     const trimmed = label?.trim() || null;
-    await upsertHoliday(date, trimmed);
+    const existing = get().holidays.get(date);
+    if (!existing) return;
     set((state) => {
       const next = new Map(state.holidays);
-      const existing = state.holidays.get(date);
-      if (existing) next.set(date, { ...existing, label: trimmed });
+      next.set(date, { ...existing, label: trimmed });
       return { holidays: next };
     });
+    try {
+      await upsertHoliday(date, trimmed);
+    } catch (err) {
+      reportWriteError("holiday label update failed", err);
+      set((state) => {
+        const next = new Map(state.holidays);
+        next.set(date, existing);
+        return { holidays: next };
+      });
+    }
   },
 }));
