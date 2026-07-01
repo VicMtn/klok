@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calculateDay, calculateTotal, calculateBalance, calculateTotalWithHolidays } from "./calculations";
-import type { TimeEntry, Holiday, Vacation } from "../types/entry";
+import type { TimeEntry, Holiday, Vacation, SickDay } from "../types/entry";
 
 function entry(overrides: Partial<TimeEntry> = {}): TimeEntry {
   return {
@@ -20,6 +20,10 @@ function holiday(date: string): Holiday {
 
 function vacation(date: string, type: Vacation["type"] = "paid"): Vacation {
   return { date, type };
+}
+
+function sick(date: string): SickDay {
+  return { date };
 }
 
 describe("calculateDay", () => {
@@ -158,6 +162,12 @@ describe("calculateBalance", () => {
     const vacations = [vacation("2024-01-16", "overtime")];
     expect(calculateBalance(entries, 8, [], vacations)).toBe(1 - 8);
   });
+
+  it("n'affecte pas le solde pour un jour de maladie", () => {
+    const entries = [entry({ arrival: "09:00", departure: "17:00" })];
+    const sickDays = [sick("2024-01-16")];
+    expect(calculateBalance(entries, 8, [], [], sickDays)).toBe(0);
+  });
 });
 
 describe("calculateTotalWithHolidays", () => {
@@ -190,5 +200,11 @@ describe("calculateTotalWithHolidays", () => {
     const entries = [entry({ arrival: "09:00", departure: "17:00" })];
     const vacations = [vacation("2024-01-16", "overtime")];
     expect(calculateTotalWithHolidays(entries, [], 8, vacations)).toBe(8);
+  });
+
+  it("crédite les heures d'un jour de maladie", () => {
+    const entries = [entry({ arrival: "09:00", departure: "17:00" })];
+    const sickDays = [sick("2024-01-16")];
+    expect(calculateTotalWithHolidays(entries, [], 8, [], sickDays)).toBe(16);
   });
 });

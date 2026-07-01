@@ -1,4 +1,4 @@
-import type { TimeEntry, DayCalculation, Holiday, Vacation } from "../types/entry";
+import type { TimeEntry, DayCalculation, Holiday, Vacation, SickDay } from "../types/entry";
 import { timeToMinutes } from "./formatting";
 
 export function calculateDay(entry: TimeEntry): DayCalculation {
@@ -31,11 +31,13 @@ export function calculateBalance(
   entries: TimeEntry[],
   expectedHoursPerDay: number,
   holidays: Holiday[] = [],
-  vacations: Vacation[] = []
+  vacations: Vacation[] = [],
+  sickDays: SickDay[] = []
 ): number {
   const skipDates = new Set([
     ...holidays.map((h) => h.date),
     ...vacations.map((v) => v.date),
+    ...sickDays.map((s) => s.date),
   ]);
   const workEntries = entries.filter((e) => !skipDates.has(e.date));
   const workedDays = workEntries.filter((e) => calculateDay(e).isComplete).length;
@@ -52,17 +54,20 @@ export function calculateTotalWithHolidays(
   entries: TimeEntry[],
   holidays: Holiday[],
   expectedHoursPerDay: number,
-  vacations: Vacation[] = []
+  vacations: Vacation[] = [],
+  sickDays: SickDay[] = []
 ): number {
   const skipDates = new Set([
     ...holidays.map((h) => h.date),
     ...vacations.map((v) => v.date),
+    ...sickDays.map((s) => s.date),
   ]);
   const workEntries = entries.filter((e) => !skipDates.has(e.date));
   const worked = calculateTotal(workEntries);
-  // Paid leave and holidays credit a day's worth of hours. Overtime-recovery
-  // days don't: those hours were already worked (and counted) earlier.
+  // Paid leave, holidays and sick days credit a day's worth of hours.
+  // Overtime-recovery days don't: those hours were already worked (and counted).
   const paidVacationDays = vacations.filter((v) => v.type !== "overtime").length;
-  const extraHours = (holidays.length + paidVacationDays) * expectedHoursPerDay;
+  const extraHours =
+    (holidays.length + paidVacationDays + sickDays.length) * expectedHoursPerDay;
   return Math.round((worked + extraHours) * 100) / 100;
 }
