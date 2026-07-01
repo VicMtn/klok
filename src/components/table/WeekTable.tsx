@@ -3,18 +3,14 @@ import { DayRow } from "../entry/DayRow";
 import { TotalsRow } from "./TotalsRow";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
-import { useHolidaysStore } from "../../store/useHolidaysStore";
-import { useVacationsStore } from "../../store/useVacationsStore";
-import { useSickDaysStore } from "../../store/useSickDaysStore";
+import { useSpecialDaysStore } from "../../store/useSpecialDaysStore";
 import { useT } from "../../i18n";
-import type { TimeEntry, Holiday, Vacation, SickDay } from "../../types/entry";
+import type { TimeEntry, SpecialDay } from "../../types/entry";
 
 export function WeekTable({ dates }: { dates: string[] }) {
   const t = useT();
   const entriesMap = useEntriesStore((s) => s.entries);
-  const holidaysMap = useHolidaysStore((s) => s.holidays);
-  const vacationsMap = useVacationsStore((s) => s.vacations);
-  const sickDaysMap = useSickDaysStore((s) => s.sickDays);
+  const specialDaysMap = useSpecialDaysStore((s) => s.specialDays);
   const expectedHoursPerDay = useSettingsStore(
     (s) => s.settings.expected_hours_per_week / 5
   );
@@ -36,19 +32,9 @@ export function WeekTable({ dates }: { dates: string[] }) {
     [entriesMap, dates]
   );
 
-  const holidays = useMemo(
-    () => dates.map((d) => holidaysMap.get(d)).filter((h): h is Holiday => h !== undefined),
-    [holidaysMap, dates]
-  );
-
-  const vacations = useMemo(
-    () => dates.map((d) => vacationsMap.get(d)).filter((v): v is Vacation => v !== undefined),
-    [vacationsMap, dates]
-  );
-
-  const sickDays = useMemo(
-    () => dates.map((d) => sickDaysMap.get(d)).filter((s): s is SickDay => s !== undefined),
-    [sickDaysMap, dates]
+  const specialDays = useMemo(
+    () => dates.map((d) => specialDaysMap.get(d)).filter((s): s is SpecialDay => s !== undefined),
+    [specialDaysMap, dates]
   );
 
   return (
@@ -74,9 +60,7 @@ export function WeekTable({ dates }: { dates: string[] }) {
         <tfoot>
           <TotalsRow
             entries={entries}
-            holidays={holidays}
-            vacations={vacations}
-            sickDays={sickDays}
+            specialDays={specialDays}
             expectedHoursPerDay={expectedHoursPerDay}
             colSpan={6}
           />

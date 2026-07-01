@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "../components/layout/Header";
-import { useVacationsStore } from "../store/useVacationsStore";
+import { useSpecialDaysStore } from "../store/useSpecialDaysStore";
 import { useSettingsStore } from "../store/useSettingsStore";
-import { getEntriesForYear, getHolidaysForYear } from "../lib/db";
+import { getEntriesForYear } from "../lib/db";
 import { calculateBalance } from "../lib/calculations";
 import { getDayName, formatDisplayDate } from "../lib/dateUtils";
 import { formatDecimalHours, formatBalance } from "../lib/formatting";
-import type { TimeEntry, Holiday } from "../types/entry";
+import type { TimeEntry } from "../types/entry";
 import { useT } from "../i18n";
 
 export function VacationView() {
   const t = useT();
-  const vacationsMap = useVacationsStore((s) => s.vacations);
-  const loadYear = useVacationsStore((s) => s.loadYear);
-  const toggle = useVacationsStore((s) => s.toggle);
-  const setVacation = useVacationsStore((s) => s.setVacation);
+  const specialDaysMap = useSpecialDaysStore((s) => s.specialDays);
+  const loadYear = useSpecialDaysStore((s) => s.loadYear);
+  const setType = useSpecialDaysStore((s) => s.setType);
+  const remove = useSpecialDaysStore((s) => s.remove);
   const allocation = useSettingsStore((s) => s.settings.vacation_days_per_year);
   const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
   const expectedHoursPerDay = expectedHoursPerWeek / 5;
@@ -22,24 +22,29 @@ export function VacationView() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [entries, setEntries] = useState<TimeEntry[]>([]);
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   useEffect(() => {
     loadYear(year);
     getEntriesForYear(year).then(setEntries);
-    getHolidaysForYear(year).then(setHolidays);
   }, [year]);
 
-  const vacationsForYear = useMemo(() => {
+  // All special days of the year (drives the overtime-balance calculation).
+  const specialDaysForYear = useMemo(() => {
     const prefix = `${year}-`;
-    return Array.from(vacationsMap.values())
-      .filter((v) => v.date.startsWith(prefix))
+    return Array.from(specialDaysMap.values())
+      .filter((s) => s.date.startsWith(prefix))
       .sort((a, b) => a.date.localeCompare(b.date));
-  }, [vacationsMap, year]);
+  }, [specialDaysMap, year]);
+
+  // The list and allocation counters only concern vacation-type days.
+  const vacationsForYear = useMemo(
+    () => specialDaysForYear.filter((s) => s.type === "paid" || s.type === "overtime"),
+    [specialDaysForYear]
+  );
 
   // Only paid leave is drawn from the annual allocation; recovery days are paid
   // out of overtime instead.
-  const taken = vacationsForYear.filter((v) => v.type !== "overtime").length;
+  const taken = vacationsForYear.filter((v) => v.type === "paid").length;
   const overtimeDays = vacationsForYear.filter((v) => v.type === "overtime").length;
   const overtimeHours = overtimeDays * expectedHoursPerDay;
   const remaining = Math.max(0, allocation - taken);
@@ -47,8 +52,8 @@ export function VacationView() {
 
   // Remaining overtime balance after the recovery days already booked this year.
   const overtimeBalance = useMemo(
-    () => calculateBalance(entries, expectedHoursPerDay, holidays, vacationsForYear),
-    [entries, holidays, vacationsForYear, expectedHoursPerDay]
+    () => calculateBalance(entries, expectedHoursPerDay, specialDaysForYear),
+    [entries, specialDaysForYear, expectedHoursPerDay]
   );
 
   return (
@@ -147,7 +152,7 @@ export function VacationView() {
                     </div>
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => setVacation(v.date, isOvertime ? "paid" : "overtime")}
+                        onClick={() => setType(v.date, isOvertime ? "paid" : "overtime")}
                         title={isOvertime ? t.vacation.switchToPaid : t.vacation.switchToOvertime}
                         className={`text-xs font-semibold px-1.5 py-0.5 rounded transition-colors ${
                           isOvertime
@@ -158,7 +163,7 @@ export function VacationView() {
                         {isOvertime ? t.vacation.typeOvertime : t.vacation.typePaid}
                       </button>
                       <button
-                        onClick={() => toggle(v.date)}
+                        onClick={() => remove(v.date)}
                         title={t.vacation.removeDay}
                         className="text-xs text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-2"
                       >

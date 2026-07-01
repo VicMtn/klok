@@ -2,28 +2,24 @@ import {
   calculateDay,
   calculateTotal,
   calculateBalance,
-  calculateTotalWithHolidays,
+  calculateTotalWithCredits,
 } from "../../lib/calculations";
 import { formatDecimalHours, formatBalance, minutesToTime } from "../../lib/formatting";
 import { getDayName, formatDisplayDate } from "../../lib/dateUtils";
 import { useT } from "../../i18n";
-import type { TimeEntry, Holiday, Vacation, SickDay } from "../../types/entry";
+import type { TimeEntry, SpecialDay } from "../../types/entry";
 
 interface Props {
   dates: string[];
   entries: Map<string, TimeEntry>;
-  holidays: Map<string, Holiday>;
-  vacations: Map<string, Vacation>;
-  sickDays: Map<string, SickDay>;
+  specialDays: Map<string, SpecialDay>;
   expectedHoursPerDay: number;
 }
 
 export function PrintWeekTable({
   dates,
   entries,
-  holidays,
-  vacations,
-  sickDays,
+  specialDays,
   expectedHoursPerDay,
 }: Props) {
   const t = useT();
@@ -31,55 +27,36 @@ export function PrintWeekTable({
   // Scope every collection to the printed dates so the credited-hours totals
   // can't be inflated by data loaded for an adjacent range.
   const visibleEntries = dates.map((d) => entries.get(d)).filter(Boolean) as TimeEntry[];
-  const holidayList = dates.map((d) => holidays.get(d)).filter(Boolean) as Holiday[];
-  const vacationList = dates.map((d) => vacations.get(d)).filter(Boolean) as Vacation[];
-  const sickList = dates.map((d) => sickDays.get(d)).filter(Boolean) as SickDay[];
+  const specialList = dates.map((d) => specialDays.get(d)).filter(Boolean) as SpecialDay[];
 
   // Worked-only sum drives the "empty printout" guard; the displayed total and
   // balance use the same credited-hours logic as the on-screen totals row.
   const workedTotal = calculateTotal(visibleEntries);
-  const total = calculateTotalWithHolidays(
-    visibleEntries,
-    holidayList,
-    expectedHoursPerDay,
-    vacationList,
-    sickList
-  );
-  const balance = calculateBalance(
-    visibleEntries,
-    expectedHoursPerDay,
-    holidayList,
-    vacationList,
-    sickList
-  );
+  const total = calculateTotalWithCredits(visibleEntries, expectedHoursPerDay, specialList);
+  const balance = calculateBalance(visibleEntries, expectedHoursPerDay, specialList);
   // Show the footer whenever the period carries meaning: real worked hours, or
   // any special day (an all-overtime week credits 0h yet still owes a balance).
-  const hasContent =
-    workedTotal > 0 ||
-    holidayList.length + vacationList.length + sickList.length > 0;
+  const hasContent = workedTotal > 0 || specialList.length > 0;
 
-  // Precedence mirrors DayRow: holiday > vacation > sick.
   const specialFor = (date: string) => {
-    const holiday = holidays.get(date);
-    if (holiday) {
-      return {
-        label: holiday.label ? `${t.entry.holiday} — ${holiday.label}` : t.entry.holiday,
-        hours: expectedHoursPerDay,
-        sign: "",
-      };
+    const special = specialDays.get(date);
+    if (!special) return null;
+    switch (special.type) {
+      case "holiday":
+        return {
+          label: special.label ? `${t.entry.holiday} — ${special.label}` : t.entry.holiday,
+          hours: expectedHoursPerDay,
+          sign: "",
+        };
+      case "overtime":
+        // Overtime recovery reads as a minus: it spends accumulated overtime
+        // rather than crediting the period, exactly like the on-screen row.
+        return { label: t.entry.overtime, hours: expectedHoursPerDay, sign: "-" };
+      case "sick":
+        return { label: t.entry.sick, hours: expectedHoursPerDay, sign: "" };
+      default:
+        return { label: t.entry.vacation, hours: expectedHoursPerDay, sign: "" };
     }
-    const vacation = vacations.get(date);
-    if (vacation) {
-      // Overtime recovery reads as a minus: it spends accumulated overtime
-      // rather than crediting the period, exactly like the on-screen row.
-      return vacation.type === "overtime"
-        ? { label: t.entry.overtime, hours: expectedHoursPerDay, sign: "-" }
-        : { label: t.entry.vacation, hours: expectedHoursPerDay, sign: "" };
-    }
-    if (sickDays.get(date)) {
-      return { label: t.entry.sick, hours: expectedHoursPerDay, sign: "" };
-    }
-    return null;
   };
 
   return (

@@ -5,9 +5,7 @@ import { Header } from "../components/layout/Header";
 import { useEntriesStore } from "../store/useEntriesStore";
 import { useBadgeStore } from "../store/useBadgeStore";
 import { usePrintStore } from "../store/usePrintStore";
-import { useHolidaysStore } from "../store/useHolidaysStore";
-import { useVacationsStore } from "../store/useVacationsStore";
-import { useSickDaysStore } from "../store/useSickDaysStore";
+import { useSpecialDaysStore } from "../store/useSpecialDaysStore";
 import {
   getISOWeekDates,
   getISOWeek,
@@ -28,9 +26,7 @@ export function WeekView({ year, week, onNavigate }: Props) {
   const loadWeek = useEntriesStore((s) => s.loadWeek);
   const hydrate = useBadgeStore((s) => s.hydrate);
   const setPrint = usePrintStore((s) => s.setPrint);
-  const loadHolidaysRange = useHolidaysStore((s) => s.loadRange);
-  const loadVacationsRange = useVacationsStore((s) => s.loadRange);
-  const loadSickDaysRange = useSickDaysStore((s) => s.loadRange);
+  const loadSpecialDaysRange = useSpecialDaysStore((s) => s.loadRange);
 
   const dates = useMemo(() => getISOWeekDates(year, week), [year, week]);
   const monthLabel = useMemo(() => {
@@ -58,9 +54,7 @@ export function WeekView({ year, week, onNavigate }: Props) {
     loadWeek(start, end).then(() => {
       if (todayInView) hydrate(useEntriesStore.getState().entries.get(todayDate));
     });
-    loadHolidaysRange(start, end);
-    loadVacationsRange(start, end);
-    loadSickDaysRange(start, end);
+    loadSpecialDaysRange(start, end);
     setPrint(dates, title);
   }, [year, week]);
 

@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart, ChartsReferenceLine } from "@mui/x-charts";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Header } from "../components/layout/Header";
-import { getEntriesForYear, getHolidaysForYear, getVacationsForYear, getSickDaysForYear } from "../lib/db";
-import { calculateDay, calculateTotalWithHolidays, calculateBalance } from "../lib/calculations";
+import { getEntriesForYear, getSpecialDaysForYear } from "../lib/db";
+import { calculateDay, calculateTotalWithCredits, calculateBalance } from "../lib/calculations";
 import { getISOWeek } from "../lib/dateUtils";
 import { formatDecimalHours, formatBalance } from "../lib/formatting";
 import { useSettingsStore } from "../store/useSettingsStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { useT } from "../i18n";
-import type { TimeEntry, Holiday, Vacation, SickDay } from "../types/entry";
+import type { TimeEntry, SpecialDay } from "../types/entry";
 
 const lightTheme = createTheme({ palette: { mode: "light" } });
 const darkTheme = createTheme({
@@ -22,19 +22,13 @@ const darkTheme = createTheme({
 
 function buildWeeklyData(
   entries: TimeEntry[],
-  holidays: Holiday[],
-  vacations: Vacation[],
-  sickDays: SickDay[],
+  specialDays: SpecialDay[],
   upToWeek: number,
   expectedHoursPerWeek: number
 ) {
   const expectedHoursPerDay = expectedHoursPerWeek / 5;
   const weekMap = new Map<number, number>();
-  const skipDates = new Set([
-    ...holidays.map((h) => h.date),
-    ...vacations.map((v) => v.date),
-    ...sickDays.map((s) => s.date),
-  ]);
+  const skipDates = new Set(specialDays.map((s) => s.date));
 
   for (const entry of entries) {
     if (skipDates.has(entry.date)) continue;
@@ -46,22 +40,11 @@ function buildWeeklyData(
     }
   }
 
-  for (const holiday of holidays) {
-    const { week } = getISOWeek(new Date(holiday.date + "T00:00:00"));
-    if (week >= 1 && week <= upToWeek) {
-      weekMap.set(week, Math.round(((weekMap.get(week) ?? 0) + expectedHoursPerDay) * 100) / 100);
-    }
-  }
-
-  for (const vacation of vacations) {
-    const { week } = getISOWeek(new Date(vacation.date + "T00:00:00"));
-    if (week >= 1 && week <= upToWeek) {
-      weekMap.set(week, Math.round(((weekMap.get(week) ?? 0) + expectedHoursPerDay) * 100) / 100);
-    }
-  }
-
-  for (const sickDay of sickDays) {
-    const { week } = getISOWeek(new Date(sickDay.date + "T00:00:00"));
+  // Every special day fills its week bar with a full day — including overtime
+  // recovery, which reads as a day "present" even though it doesn't credit the
+  // yearly total (those hours were banked earlier).
+  for (const s of specialDays) {
+    const { week } = getISOWeek(new Date(s.date + "T00:00:00"));
     if (week >= 1 && week <= upToWeek) {
       weekMap.set(week, Math.round(((weekMap.get(week) ?? 0) + expectedHoursPerDay) * 100) / 100);
     }
@@ -76,9 +59,7 @@ function buildWeeklyData(
 export function StatsView() {
   const t = useT();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
-  const [vacations, setVacations] = useState<Vacation[]>([]);
-  const [sickDays, setSickDays] = useState<SickDay[]>([]);
+  const [specialDays, setSpecialDays] = useState<SpecialDay[]>([]);
   const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
   const expectedHoursPerDay = expectedHoursPerWeek / 5;
   const vacationAllocation = useSettingsStore((s) => s.settings.vacation_days_per_year);
@@ -90,42 +71,36 @@ export function StatsView() {
 
   useEffect(() => {
     getEntriesForYear(year).then(setEntries);
-    getHolidaysForYear(year).then(setHolidays);
-    getVacationsForYear(year).then(setVacations);
-    getSickDaysForYear(year).then(setSickDays);
+    getSpecialDaysForYear(year).then(setSpecialDays);
   }, [year]);
 
   const weeklyData = useMemo(
-    () => buildWeeklyData(entries, holidays, vacations, sickDays, currentWeek, expectedHoursPerWeek),
-    [entries, holidays, vacations, sickDays, currentWeek, expectedHoursPerWeek]
+    () => buildWeeklyData(entries, specialDays, currentWeek, expectedHoursPerWeek),
+    [entries, specialDays, currentWeek, expectedHoursPerWeek]
   );
 
   const totalHours = useMemo(
-    () => calculateTotalWithHolidays(entries, holidays, expectedHoursPerDay, vacations, sickDays),
-    [entries, holidays, vacations, sickDays, expectedHoursPerDay]
+    () => calculateTotalWithCredits(entries, expectedHoursPerDay, specialDays),
+    [entries, specialDays, expectedHoursPerDay]
   );
 
   const balance = useMemo(
-    () => calculateBalance(entries, expectedHoursPerDay, holidays, vacations, sickDays),
-    [entries, holidays, vacations, sickDays, expectedHoursPerDay]
+    () => calculateBalance(entries, expectedHoursPerDay, specialDays),
+    [entries, specialDays, expectedHoursPerDay]
   );
 
   const workedDays = useMemo(() => {
-    const skipDates = new Set([
-      ...holidays.map((h) => h.date),
-      ...vacations.map((v) => v.date),
-      ...sickDays.map((s) => s.date),
-    ]);
+    const skipDates = new Set(specialDays.map((s) => s.date));
     const regularDays = entries.filter(
       (e) => !skipDates.has(e.date) && calculateDay(e).isComplete
     ).length;
-    return regularDays + holidays.length + vacations.length + sickDays.length;
-  }, [entries, holidays, vacations, sickDays]);
+    return regularDays + specialDays.length;
+  }, [entries, specialDays]);
 
-  // Recovery days come out of overtime, not the annual allocation.
-  const vacationTaken = vacations.filter((v) => v.type !== "overtime").length;
+  // Only paid leave draws on the annual allocation.
+  const vacationTaken = specialDays.filter((s) => s.type === "paid").length;
   const vacationRemaining = Math.max(0, vacationAllocation - vacationTaken);
-  const sickTaken = sickDays.length;
+  const sickTaken = specialDays.filter((s) => s.type === "sick").length;
 
   const completedWeeks = weeklyData.slice(0, currentWeek - 1);
   const workedWeeks = completedWeeks.filter((w) => w.hours > 0).length;

@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { TimeEntry, Holiday, Vacation, VacationType, SickDay } from "../types/entry";
+import type { TimeEntry, SpecialDay, SpecialDayType } from "../types/entry";
 
 let _db: Database | null = null;
 
@@ -48,90 +48,37 @@ export async function updateEntryField(
   );
 }
 
-export async function getHolidaysForRange(start: string, end: string): Promise<Holiday[]> {
-  return (await db()).select<Holiday[]>(
-    "SELECT * FROM holidays WHERE date >= $1 AND date <= $2 ORDER BY date",
+export async function getSpecialDaysForRange(start: string, end: string): Promise<SpecialDay[]> {
+  return (await db()).select<SpecialDay[]>(
+    "SELECT * FROM special_days WHERE date >= $1 AND date <= $2 ORDER BY date",
     [start, end]
   );
 }
 
-export async function getHolidaysForYear(year: number): Promise<Holiday[]> {
-  return (await db()).select<Holiday[]>(
-    "SELECT * FROM holidays WHERE date LIKE $1 ORDER BY date",
+export async function getSpecialDaysForYear(year: number): Promise<SpecialDay[]> {
+  return (await db()).select<SpecialDay[]>(
+    "SELECT * FROM special_days WHERE date LIKE $1 ORDER BY date",
     [`${year}-%`]
   );
 }
 
-export async function upsertHoliday(date: string, label: string | null): Promise<void> {
-  await (await db()).execute(
-    "INSERT OR REPLACE INTO holidays (date, label) VALUES ($1, $2)",
-    [date, label]
-  );
-}
-
-export async function deleteHoliday(date: string): Promise<void> {
-  await (await db()).execute(
-    "DELETE FROM holidays WHERE date = $1",
-    [date]
-  );
-}
-
-export async function getVacationsForRange(start: string, end: string): Promise<Vacation[]> {
-  return (await db()).select<Vacation[]>(
-    "SELECT * FROM vacations WHERE date >= $1 AND date <= $2 ORDER BY date",
-    [start, end]
-  );
-}
-
-export async function getVacationsForYear(year: number): Promise<Vacation[]> {
-  return (await db()).select<Vacation[]>(
-    "SELECT * FROM vacations WHERE date LIKE $1 ORDER BY date",
-    [`${year}-%`]
-  );
-}
-
-export async function upsertVacation(
+// Set (or replace) the status of a date. A date holds exactly one type, so
+// switching type or editing a holiday label both go through here.
+export async function upsertSpecialDay(
   date: string,
-  type: VacationType = "paid"
+  type: SpecialDayType,
+  label: string | null = null
 ): Promise<void> {
   await (await db()).execute(
-    `INSERT INTO vacations (date, type) VALUES ($1, $2)
-     ON CONFLICT(date) DO UPDATE SET type = $2`,
-    [date, type]
+    `INSERT INTO special_days (date, type, label) VALUES ($1, $2, $3)
+     ON CONFLICT(date) DO UPDATE SET type = $2, label = $3`,
+    [date, type, label]
   );
 }
 
-export async function deleteVacation(date: string): Promise<void> {
+export async function deleteSpecialDay(date: string): Promise<void> {
   await (await db()).execute(
-    "DELETE FROM vacations WHERE date = $1",
-    [date]
-  );
-}
-
-export async function getSickDaysForRange(start: string, end: string): Promise<SickDay[]> {
-  return (await db()).select<SickDay[]>(
-    "SELECT * FROM sick_days WHERE date >= $1 AND date <= $2 ORDER BY date",
-    [start, end]
-  );
-}
-
-export async function getSickDaysForYear(year: number): Promise<SickDay[]> {
-  return (await db()).select<SickDay[]>(
-    "SELECT * FROM sick_days WHERE date LIKE $1 ORDER BY date",
-    [`${year}-%`]
-  );
-}
-
-export async function upsertSickDay(date: string): Promise<void> {
-  await (await db()).execute(
-    "INSERT OR IGNORE INTO sick_days (date) VALUES ($1)",
-    [date]
-  );
-}
-
-export async function deleteSickDay(date: string): Promise<void> {
-  await (await db()).execute(
-    "DELETE FROM sick_days WHERE date = $1",
+    "DELETE FROM special_days WHERE date = $1",
     [date]
   );
 }

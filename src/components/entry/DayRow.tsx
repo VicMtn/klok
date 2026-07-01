@@ -11,9 +11,7 @@ import { formatDecimalHours } from "../../lib/formatting";
 import type { TimeEntry } from "../../types/entry";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
-import { useHolidaysStore } from "../../store/useHolidaysStore";
-import { useVacationsStore } from "../../store/useVacationsStore";
-import { useSickDaysStore } from "../../store/useSickDaysStore";
+import { useSpecialDaysStore } from "../../store/useSpecialDaysStore";
 import { useT } from "../../i18n";
 
 export function DayRow({ date }: { date: string }) {
@@ -21,20 +19,14 @@ export function DayRow({ date }: { date: string }) {
   const updateField = useEntriesStore((s) => s.updateField);
   const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
   const expectedHours = expectedHoursPerWeek / 5;
-  const holiday = useHolidaysStore((s) => s.holidays.get(date));
-  const toggleHoliday = useHolidaysStore((s) => s.toggle);
-  const updateLabel = useHolidaysStore((s) => s.updateLabel);
-  const vacation = useVacationsStore((s) => s.vacations.get(date));
-  const toggleVacation = useVacationsStore((s) => s.toggle);
-  const setVacation = useVacationsStore((s) => s.setVacation);
-  const sick = useSickDaysStore((s) => s.sickDays.get(date));
-  const toggleSick = useSickDaysStore((s) => s.toggle);
+  const special = useSpecialDaysStore((s) => s.specialDays.get(date));
+  const setType = useSpecialDaysStore((s) => s.setType);
+  const updateLabel = useSpecialDaysStore((s) => s.updateLabel);
+  const removeSpecial = useSpecialDaysStore((s) => s.remove);
 
   const t = useT();
   const [labelDraft, setLabelDraft] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [showVacConfirm, setShowVacConfirm] = useState(false);
-  const [showSickConfirm, setShowSickConfirm] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   const e: TimeEntry = entry ?? {
     date,
@@ -45,9 +37,7 @@ export function DayRow({ date }: { date: string }) {
     comment: null,
   };
 
-  const isHoliday = holiday !== undefined;
-  const isVacation = vacation !== undefined && !isHoliday;
-  const isSick = sick !== undefined && !isHoliday && !isVacation;
+  const type = special?.type;
   const warnings = new Set(validateEntrySequence(e).map((w) => w.field));
   const { netDecimal, breakDuration, isComplete } = calculateDay(e);
   const isToday = date === today();
@@ -58,7 +48,7 @@ export function DayRow({ date }: { date: string }) {
     (field: keyof TimeEntry) => (value: string | null) =>
       updateField(date, field, value);
 
-  const currentLabel = labelDraft !== null ? labelDraft : (holiday?.label ?? "");
+  const currentLabel = labelDraft !== null ? labelDraft : (special?.label ?? "");
 
   const handleLabelBlur = () => {
     if (labelDraft !== null) {
@@ -67,8 +57,8 @@ export function DayRow({ date }: { date: string }) {
     }
   };
 
-  if (isVacation) {
-    const isOvertime = vacation!.type === "overtime";
+  if (type === "paid" || type === "overtime") {
+    const isOvertime = type === "overtime";
     // Overtime-recovery days are paid out of accumulated overtime, so they read
     // as a "minus" against the balance — shown in indigo to set them apart from
     // regular (emerald) annual leave.
@@ -124,17 +114,17 @@ export function DayRow({ date }: { date: string }) {
         </td>
         <td className="px-3 py-2 text-right">
           <button
-            onClick={() => setShowVacConfirm(true)}
+            onClick={() => setShowRemoveConfirm(true)}
             title={c.removeTitle}
             className={`text-xs ${c.remove} hover:text-red-500 dark:hover:text-red-400 transition-colors px-1`}
           >
             ×
           </button>
-          {showVacConfirm && (
+          {showRemoveConfirm && (
             <ConfirmModal
               message={c.removeConfirm}
-              onConfirm={() => { toggleVacation(date); setShowVacConfirm(false); }}
-              onCancel={() => setShowVacConfirm(false)}
+              onConfirm={() => { removeSpecial(date); setShowRemoveConfirm(false); }}
+              onCancel={() => setShowRemoveConfirm(false)}
             />
           )}
         </td>
@@ -142,7 +132,7 @@ export function DayRow({ date }: { date: string }) {
     );
   }
 
-  if (isHoliday) {
+  if (type === "holiday") {
     return (
       <tr className="border-b border-amber-100 dark:border-amber-900/30 bg-amber-50/60 dark:bg-amber-900/10">
         <td className="px-3 py-2 whitespace-nowrap">
@@ -179,17 +169,17 @@ export function DayRow({ date }: { date: string }) {
         </td>
         <td className="px-3 py-2 text-right">
           <button
-            onClick={() => setShowConfirm(true)}
+            onClick={() => setShowRemoveConfirm(true)}
             title={t.entry.removeHoliday}
             className="text-xs text-amber-400 dark:text-amber-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
           >
             ×
           </button>
-          {showConfirm && (
+          {showRemoveConfirm && (
             <ConfirmModal
               message={t.entry.removeHolidayConfirm}
-              onConfirm={() => { toggleHoliday(date); setShowConfirm(false); }}
-              onCancel={() => setShowConfirm(false)}
+              onConfirm={() => { removeSpecial(date); setShowRemoveConfirm(false); }}
+              onCancel={() => setShowRemoveConfirm(false)}
             />
           )}
         </td>
@@ -197,7 +187,7 @@ export function DayRow({ date }: { date: string }) {
     );
   }
 
-  if (isSick) {
+  if (type === "sick") {
     return (
       <tr className="border-b border-rose-100 dark:border-rose-900/30 bg-rose-50/60 dark:bg-rose-900/10">
         <td className="px-3 py-2 whitespace-nowrap">
@@ -223,17 +213,17 @@ export function DayRow({ date }: { date: string }) {
         </td>
         <td className="px-3 py-2 text-right">
           <button
-            onClick={() => setShowSickConfirm(true)}
+            onClick={() => setShowRemoveConfirm(true)}
             title={t.entry.removeSick}
             className="text-xs text-rose-400 dark:text-rose-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
           >
             ×
           </button>
-          {showSickConfirm && (
+          {showRemoveConfirm && (
             <ConfirmModal
               message={t.entry.removeSickConfirm}
-              onConfirm={() => { toggleSick(date); setShowSickConfirm(false); }}
-              onCancel={() => setShowSickConfirm(false)}
+              onConfirm={() => { removeSpecial(date); setShowRemoveConfirm(false); }}
+              onCancel={() => setShowRemoveConfirm(false)}
             />
           )}
         </td>
@@ -294,10 +284,10 @@ export function DayRow({ date }: { date: string }) {
         <div className="flex items-center gap-1.5">
           <CommentInput value={e.comment} onChange={handle("comment")} />
           <RowMenu
-            onHoliday={() => toggleHoliday(date)}
-            onVacation={() => toggleVacation(date)}
-            onOvertime={() => setVacation(date, "overtime")}
-            onSick={() => toggleSick(date)}
+            onHoliday={() => setType(date, "holiday")}
+            onVacation={() => setType(date, "paid")}
+            onOvertime={() => setType(date, "overtime")}
+            onSick={() => setType(date, "sick")}
             holidayLabel={t.entry.markHoliday}
             vacationLabel={t.entry.markVacation}
             overtimeLabel={t.entry.markOvertime}
