@@ -1,12 +1,18 @@
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { usePrintStore } from "../../store/usePrintStore";
+import { useHolidaysStore } from "../../store/useHolidaysStore";
+import { useVacationsStore } from "../../store/useVacationsStore";
+import { useSickDaysStore } from "../../store/useSickDaysStore";
 import { PrintWeekTable } from "./PrintWeekTable";
 import { useT } from "../../i18n";
 
 export function PrintView() {
   const t = useT();
   const entries = useEntriesStore((s) => s.entries);
+  const holidays = useHolidaysStore((s) => s.holidays);
+  const vacations = useVacationsStore((s) => s.vacations);
+  const sickDays = useSickDaysStore((s) => s.sickDays);
   const expectedHoursPerDay = useSettingsStore(
     (s) => s.settings.expected_hours_per_week / 5
   );
@@ -25,6 +31,9 @@ export function PrintView() {
           <PrintWeekTable
             dates={dates}
             entries={entries}
+            holidays={holidays}
+            vacations={vacations}
+            sickDays={sickDays}
             expectedHoursPerDay={expectedHoursPerDay}
           />
         </>
