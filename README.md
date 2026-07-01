@@ -10,17 +10,23 @@
 
 ## Screenshots
 
-| Weekly view | Statistics |
+| Weekly view | Special Days |
 |---|---|
-| ![Weekly view](screenshots/weekly_capture.png) | ![Statistics](screenshots/klok_stats_capture.png) |
+| ![Weekly view](screenshots/normal_week.png) | ![Specials Days](screenshots/special_days.png) |
+
+| Vacation & Overtime | Statistics |
+|---|---|
+| ![Vacation tracking](screenshots/vacation.png) | ![Statistics](screenshots/statistics.png) |
 
 ## Features
 
 - **Week and month views** — arrival, break start/end, departure, net hours, balance per day
 - **Public holidays** — mark any day as a holiday; it counts toward your expected hours automatically
 - **Vacation tracking** — dedicated page modelled on the Swiss system (4, 5 or 6 weeks per year: 20 / 25 / 30 days); mark any day as a vacation day from the row menu and it counts toward your expected hours
-- **Per-row dropdown** — a single ⋮ button in each day row exposes both "mark as holiday" and "mark as vacation"
-- **Statistics page** — weekly bar chart for the current year, with total hours, worked days, balance, weekly average, and vacation taken / remaining
+- **Overtime recovery** — take a day off drawn from your accumulated overtime; it deducts a day from your balance instead of counting against your annual vacation allocation, and the vacation page surfaces your remaining overtime balance
+- **Sick days** — mark any day as a sick day; it credits your expected hours like a paid day, stays neutral to your balance, and is tracked separately with no annual cap
+- **Per-row dropdown** — a single ⋮ button in each day row lets you mark a day as holiday, vacation, overtime recovery or sick, each colour-coded in the table
+- **Statistics page** — weekly bar chart for the current year, with total hours, worked days, balance, weekly average, vacation taken / remaining, and sick days taken
 - **Expected hours per week** — configurable target (default 37.5h), used to compute daily and weekly balance
 - **Notes** per day entry
 - **i18n** — French / English, switchable from the sidebar
