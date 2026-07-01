@@ -13,6 +13,7 @@ import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useHolidaysStore } from "../../store/useHolidaysStore";
 import { useVacationsStore } from "../../store/useVacationsStore";
+import { useSickDaysStore } from "../../store/useSickDaysStore";
 import { useT } from "../../i18n";
 
 export function DayRow({ date }: { date: string }) {
@@ -26,11 +27,14 @@ export function DayRow({ date }: { date: string }) {
   const vacation = useVacationsStore((s) => s.vacations.get(date));
   const toggleVacation = useVacationsStore((s) => s.toggle);
   const setVacation = useVacationsStore((s) => s.setVacation);
+  const sick = useSickDaysStore((s) => s.sickDays.get(date));
+  const toggleSick = useSickDaysStore((s) => s.toggle);
 
   const t = useT();
   const [labelDraft, setLabelDraft] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showVacConfirm, setShowVacConfirm] = useState(false);
+  const [showSickConfirm, setShowSickConfirm] = useState(false);
 
   const e: TimeEntry = entry ?? {
     date,
@@ -43,6 +47,7 @@ export function DayRow({ date }: { date: string }) {
 
   const isHoliday = holiday !== undefined;
   const isVacation = vacation !== undefined && !isHoliday;
+  const isSick = sick !== undefined && !isHoliday && !isVacation;
   const warnings = new Set(validateEntrySequence(e).map((w) => w.field));
   const { netDecimal, breakDuration, isComplete } = calculateDay(e);
   const isToday = date === today();
@@ -192,6 +197,50 @@ export function DayRow({ date }: { date: string }) {
     );
   }
 
+  if (isSick) {
+    return (
+      <tr className="border-b border-rose-100 dark:border-rose-900/30 bg-rose-50/60 dark:bg-rose-900/10">
+        <td className="px-3 py-2 whitespace-nowrap">
+          <span className="text-sm font-medium capitalize text-rose-700 dark:text-rose-400">
+            {getDayName(date, true)}
+          </span>
+          <span className="ml-1.5 text-xs text-rose-500/70 dark:text-rose-500/60">{formatDisplayDate(date)}</span>
+        </td>
+        <td colSpan={5} className="px-3 py-2">
+          <span className="text-xs font-semibold bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded">
+            {t.entry.sick}
+          </span>
+        </td>
+        <td className="px-3 py-2 text-right">
+          <span className="text-sm font-mono font-medium text-rose-600 dark:text-rose-400">
+            {formatDecimalHours(expectedHours)}
+          </span>
+        </td>
+        <td className="px-3 py-2 text-right">
+          <span className="text-sm font-mono text-rose-500 dark:text-rose-500">
+            {expectedHours.toFixed(2)}
+          </span>
+        </td>
+        <td className="px-3 py-2 text-right">
+          <button
+            onClick={() => setShowSickConfirm(true)}
+            title={t.entry.removeSick}
+            className="text-xs text-rose-400 dark:text-rose-600 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
+          >
+            ×
+          </button>
+          {showSickConfirm && (
+            <ConfirmModal
+              message={t.entry.removeSickConfirm}
+              onConfirm={() => { toggleSick(date); setShowSickConfirm(false); }}
+              onCancel={() => setShowSickConfirm(false)}
+            />
+          )}
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <tr
       className={`border-b border-gray-100 dark:border-gray-700/50 transition-colors group ${isToday
@@ -248,9 +297,11 @@ export function DayRow({ date }: { date: string }) {
             onHoliday={() => toggleHoliday(date)}
             onVacation={() => toggleVacation(date)}
             onOvertime={() => setVacation(date, "overtime")}
+            onSick={() => toggleSick(date)}
             holidayLabel={t.entry.markHoliday}
             vacationLabel={t.entry.markVacation}
             overtimeLabel={t.entry.markOvertime}
+            sickLabel={t.entry.markSick}
           />
         </div>
       </td>
@@ -262,12 +313,14 @@ interface RowMenuProps {
   onHoliday: () => void;
   onVacation: () => void;
   onOvertime: () => void;
+  onSick: () => void;
   holidayLabel: string;
   vacationLabel: string;
   overtimeLabel: string;
+  sickLabel: string;
 }
 
-function RowMenu({ onHoliday, onVacation, onOvertime, holidayLabel, vacationLabel, overtimeLabel }: RowMenuProps) {
+function RowMenu({ onHoliday, onVacation, onOvertime, onSick, holidayLabel, vacationLabel, overtimeLabel, sickLabel }: RowMenuProps) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -334,6 +387,12 @@ function RowMenu({ onHoliday, onVacation, onOvertime, holidayLabel, vacationLabe
             className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors"
           >
             {overtimeLabel}
+          </button>
+          <button
+            onClick={() => { onSick(); setOpen(false); }}
+            className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-700 dark:hover:text-rose-400 transition-colors"
+          >
+            {sickLabel}
           </button>
         </div>,
         document.body

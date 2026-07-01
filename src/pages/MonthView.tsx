@@ -7,6 +7,7 @@ import { useBadgeStore } from "../store/useBadgeStore";
 import { usePrintStore } from "../store/usePrintStore";
 import { useHolidaysStore } from "../store/useHolidaysStore";
 import { useVacationsStore } from "../store/useVacationsStore";
+import { useSickDaysStore } from "../store/useSickDaysStore";
 import { getMonthDates, today } from "../lib/dateUtils";
 import { useT } from "../i18n";
 
@@ -23,6 +24,7 @@ export function MonthView({ year, month, onNavigate }: Props) {
   const setPrint = usePrintStore((s) => s.setPrint);
   const loadHolidaysRange = useHolidaysStore((s) => s.loadRange);
   const loadVacationsRange = useVacationsStore((s) => s.loadRange);
+  const loadSickDaysRange = useSickDaysStore((s) => s.loadRange);
 
   const dates = useMemo(() => getMonthDates(year, month), [year, month]);
   const title = `${t.month.names[month - 1]} ${year}`;
@@ -46,6 +48,7 @@ export function MonthView({ year, month, onNavigate }: Props) {
     });
     loadHolidaysRange(dates[0], dates[dates.length - 1]);
     loadVacationsRange(dates[0], dates[dates.length - 1]);
+    loadSickDaysRange(dates[0], dates[dates.length - 1]);
     setPrint(dates, title);
   }, [year, month]);
 

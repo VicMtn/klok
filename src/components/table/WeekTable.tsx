@@ -5,14 +5,16 @@ import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useHolidaysStore } from "../../store/useHolidaysStore";
 import { useVacationsStore } from "../../store/useVacationsStore";
+import { useSickDaysStore } from "../../store/useSickDaysStore";
 import { useT } from "../../i18n";
-import type { TimeEntry, Holiday, Vacation } from "../../types/entry";
+import type { TimeEntry, Holiday, Vacation, SickDay } from "../../types/entry";
 
 export function WeekTable({ dates }: { dates: string[] }) {
   const t = useT();
   const entriesMap = useEntriesStore((s) => s.entries);
   const holidaysMap = useHolidaysStore((s) => s.holidays);
   const vacationsMap = useVacationsStore((s) => s.vacations);
+  const sickDaysMap = useSickDaysStore((s) => s.sickDays);
   const expectedHoursPerDay = useSettingsStore(
     (s) => s.settings.expected_hours_per_week / 5
   );
@@ -44,6 +46,11 @@ export function WeekTable({ dates }: { dates: string[] }) {
     [vacationsMap, dates]
   );
 
+  const sickDays = useMemo(
+    () => dates.map((d) => sickDaysMap.get(d)).filter((s): s is SickDay => s !== undefined),
+    [sickDaysMap, dates]
+  );
+
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
       <table className="w-full text-left border-collapse">
@@ -69,6 +76,7 @@ export function WeekTable({ dates }: { dates: string[] }) {
             entries={entries}
             holidays={holidays}
             vacations={vacations}
+            sickDays={sickDays}
             expectedHoursPerDay={expectedHoursPerDay}
             colSpan={6}
           />

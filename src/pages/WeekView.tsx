@@ -7,6 +7,7 @@ import { useBadgeStore } from "../store/useBadgeStore";
 import { usePrintStore } from "../store/usePrintStore";
 import { useHolidaysStore } from "../store/useHolidaysStore";
 import { useVacationsStore } from "../store/useVacationsStore";
+import { useSickDaysStore } from "../store/useSickDaysStore";
 import {
   getISOWeekDates,
   getISOWeek,
@@ -29,6 +30,7 @@ export function WeekView({ year, week, onNavigate }: Props) {
   const setPrint = usePrintStore((s) => s.setPrint);
   const loadHolidaysRange = useHolidaysStore((s) => s.loadRange);
   const loadVacationsRange = useVacationsStore((s) => s.loadRange);
+  const loadSickDaysRange = useSickDaysStore((s) => s.loadRange);
 
   const dates = useMemo(() => getISOWeekDates(year, week), [year, week]);
   const monthLabel = useMemo(() => {
@@ -58,6 +60,7 @@ export function WeekView({ year, week, onNavigate }: Props) {
     });
     loadHolidaysRange(start, end);
     loadVacationsRange(start, end);
+    loadSickDaysRange(start, end);
     setPrint(dates, title);
   }, [year, week]);
 

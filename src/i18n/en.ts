@@ -48,6 +48,10 @@ export const en = {
     markOvertime: "Take from overtime hours",
     removeOvertime: "Remove this time-off-in-lieu day",
     removeOvertimeConfirm: "Remove this time-off-in-lieu day?",
+    sick: "Sick",
+    markSick: "Mark as sick day",
+    removeSick: "Remove sick status",
+    removeSickConfirm: "Remove sick status for this day?",
   },
   header: {
     print: "Print",
@@ -78,6 +82,7 @@ export const en = {
     daysUnit: (n: number) => `${n} d`,
     vacationTaken: "Vacation taken",
     vacationRemaining: "Vacation remaining",
+    sickDays: "Sick days",
   },
   vacation: {
     title: "Vacation",

@@ -48,6 +48,10 @@ export const fr = {
     markOvertime: "Prendre sur les heures sup.",
     removeOvertime: "Retirer ce jour de récupération",
     removeOvertimeConfirm: "Retirer ce jour de récupération ?",
+    sick: "Maladie",
+    markSick: "Marquer comme jour de maladie",
+    removeSick: "Retirer le statut maladie",
+    removeSickConfirm: "Retirer le statut maladie de ce jour ?",
   },
   header: {
     print: "Imprimer",
@@ -78,6 +82,7 @@ export const fr = {
     daysUnit: (n: number) => `${n} j`,
     vacationTaken: "Vacances prises",
     vacationRemaining: "Vacances restantes",
+    sickDays: "Jours de maladie",
   },
   vacation: {
     title: "Vacances",
