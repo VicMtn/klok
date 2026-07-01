@@ -105,6 +105,12 @@ pub fn run() {
             sql: include_str!("../migrations/006_vacation_type.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 7,
+            description: "sick_days_table",
+            sql: include_str!("../migrations/007_sick_days_table.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { TimeEntry, Holiday, Vacation, VacationType } from "../types/entry";
+import type { TimeEntry, Holiday, Vacation, VacationType, SickDay } from "../types/entry";
 
 let _db: Database | null = null;
 
@@ -104,6 +104,34 @@ export async function upsertVacation(
 export async function deleteVacation(date: string): Promise<void> {
   await (await db()).execute(
     "DELETE FROM vacations WHERE date = $1",
+    [date]
+  );
+}
+
+export async function getSickDaysForRange(start: string, end: string): Promise<SickDay[]> {
+  return (await db()).select<SickDay[]>(
+    "SELECT * FROM sick_days WHERE date >= $1 AND date <= $2 ORDER BY date",
+    [start, end]
+  );
+}
+
+export async function getSickDaysForYear(year: number): Promise<SickDay[]> {
+  return (await db()).select<SickDay[]>(
+    "SELECT * FROM sick_days WHERE date LIKE $1 ORDER BY date",
+    [`${year}-%`]
+  );
+}
+
+export async function upsertSickDay(date: string): Promise<void> {
+  await (await db()).execute(
+    "INSERT OR IGNORE INTO sick_days (date) VALUES ($1)",
+    [date]
+  );
+}
+
+export async function deleteSickDay(date: string): Promise<void> {
+  await (await db()).execute(
+    "DELETE FROM sick_days WHERE date = $1",
     [date]
   );
 }

@@ -27,6 +27,11 @@ export interface Vacation {
   type: VacationType;
 }
 
+export interface SickDay {
+  id?: number;
+  date: string;
+}
+
 export interface DayCalculation {
   gross: number;
   breakDuration: number;
