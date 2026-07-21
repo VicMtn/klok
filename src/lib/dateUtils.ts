@@ -69,6 +69,23 @@ export function nextWeek(
   return { year, week: week + 1 };
 }
 
+// Add `n` days to a 'YYYY-MM-DD' string, returned in the same format (local time).
+export function addDays(dateStr: string, n: number): string {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Monday (ISO week start) of the week containing `dateStr`, as 'YYYY-MM-DD'.
+export function isoWeekMonday(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  const dow = (d.getDay() + 6) % 7; // 0 = Monday
+  return addDays(dateStr, -dow);
+}
+
 export function getDayName(dateStr: string, short = false): string {
   const date = new Date(dateStr + "T00:00:00");
   return date.toLocaleDateString("fr-FR", {

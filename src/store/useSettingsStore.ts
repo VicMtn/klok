@@ -3,7 +3,7 @@ import { getAllSettings, setSetting } from "../lib/db";
 import { reportWriteError } from "../lib/errors";
 
 interface Settings {
-  expected_hours_per_week: number;
+  reference_hours_per_week: number;
   week_starts_on: number;
   vacation_days_per_year: number;
 }
@@ -16,7 +16,7 @@ interface SettingsState {
 }
 
 const defaults: Settings = {
-  expected_hours_per_week: 37.5,
+  reference_hours_per_week: 37.5,
   week_starts_on: 1,
   vacation_days_per_year: 20,
 };
@@ -29,9 +29,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const raw = await getAllSettings();
     set({
       settings: {
-        expected_hours_per_week: raw.expected_hours_per_week
-          ? parseFloat(raw.expected_hours_per_week)
-          : defaults.expected_hours_per_week,
+        reference_hours_per_week: raw.reference_hours_per_week
+          ? parseFloat(raw.reference_hours_per_week)
+          : defaults.reference_hours_per_week,
         week_starts_on: raw.week_starts_on
           ? parseInt(raw.week_starts_on, 10)
           : defaults.week_starts_on,

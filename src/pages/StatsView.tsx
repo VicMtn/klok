@@ -3,13 +3,21 @@ import { BarChart, ChartsReferenceLine } from "@mui/x-charts";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Header } from "../components/layout/Header";
 import { getEntriesForYear, getSpecialDaysForYear } from "../lib/db";
-import { calculateDay, calculateTotalWithCredits, calculateBalance } from "../lib/calculations";
-import { getISOWeek } from "../lib/dateUtils";
+import {
+  calculateDay,
+  totalWithCredits,
+  cumulativeBalance,
+  dailyTarget,
+  weeklyTarget,
+  periodForDate,
+} from "../lib/calculations";
+import { getISOWeek, today } from "../lib/dateUtils";
 import { formatDecimalHours, formatBalance } from "../lib/formatting";
 import { useSettingsStore } from "../store/useSettingsStore";
+import { useActivityStore } from "../store/useActivityStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { useT } from "../i18n";
-import type { TimeEntry, SpecialDay } from "../types/entry";
+import type { TimeEntry, SpecialDay, ActivityPeriod } from "../types/entry";
 
 const lightTheme = createTheme({ palette: { mode: "light" } });
 const darkTheme = createTheme({
@@ -24,9 +32,9 @@ function buildWeeklyData(
   entries: TimeEntry[],
   specialDays: SpecialDay[],
   upToWeek: number,
-  expectedHoursPerWeek: number
+  reference: number,
+  periods: ActivityPeriod[]
 ) {
-  const expectedHoursPerDay = expectedHoursPerWeek / 5;
   const weekMap = new Map<number, number>();
   const skipDates = new Set(specialDays.map((s) => s.date));
 
@@ -40,13 +48,14 @@ function buildWeeklyData(
     }
   }
 
-  // Every special day fills its week bar with a full day — including overtime
-  // recovery, which reads as a day "present" even though it doesn't credit the
-  // yearly total (those hours were banked earlier).
+  // Every special day fills its week bar with a full day (at that date's daily
+  // target) — including overtime recovery, which reads as a day "present" even
+  // though it doesn't credit the yearly total (those hours were banked earlier).
   for (const s of specialDays) {
     const { week } = getISOWeek(new Date(s.date + "T00:00:00"));
     if (week >= 1 && week <= upToWeek) {
-      weekMap.set(week, Math.round(((weekMap.get(week) ?? 0) + expectedHoursPerDay) * 100) / 100);
+      const hours = dailyTarget(reference, periodForDate(periods, s.date));
+      weekMap.set(week, Math.round(((weekMap.get(week) ?? 0) + hours) * 100) / 100);
     }
   }
 
@@ -60,8 +69,8 @@ export function StatsView() {
   const t = useT();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [specialDays, setSpecialDays] = useState<SpecialDay[]>([]);
-  const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
-  const expectedHoursPerDay = expectedHoursPerWeek / 5;
+  const reference = useSettingsStore((s) => s.settings.reference_hours_per_week);
+  const periods = useActivityStore((s) => s.periods);
   const vacationAllocation = useSettingsStore((s) => s.settings.vacation_days_per_year);
   const dark = useThemeStore((s) => s.dark);
 
@@ -75,18 +84,18 @@ export function StatsView() {
   }, [year]);
 
   const weeklyData = useMemo(
-    () => buildWeeklyData(entries, specialDays, currentWeek, expectedHoursPerWeek),
-    [entries, specialDays, currentWeek, expectedHoursPerWeek]
+    () => buildWeeklyData(entries, specialDays, currentWeek, reference, periods),
+    [entries, specialDays, currentWeek, reference, periods]
   );
 
   const totalHours = useMemo(
-    () => calculateTotalWithCredits(entries, expectedHoursPerDay, specialDays),
-    [entries, specialDays, expectedHoursPerDay]
+    () => totalWithCredits(entries, specialDays, reference, periods),
+    [entries, specialDays, reference, periods]
   );
 
   const balance = useMemo(
-    () => calculateBalance(entries, expectedHoursPerDay, specialDays),
-    [entries, specialDays, expectedHoursPerDay]
+    () => cumulativeBalance(entries, specialDays, reference, periods),
+    [entries, specialDays, reference, periods]
   );
 
   const workedDays = useMemo(() => {
@@ -107,7 +116,8 @@ export function StatsView() {
   const completedHours = completedWeeks.reduce((s, w) => s + w.hours, 0);
   const avgPerWeek = workedWeeks > 0 ? Math.round((completedHours / workedWeeks) * 100) / 100 : 0;
 
-  const expectedWeeklyHours = expectedHoursPerWeek;
+  // Weekly goal for the reference line / label uses the period in effect today.
+  const expectedWeeklyHours = weeklyTarget(reference, periodForDate(periods, today()));
   const labels = weeklyData.map((d) => d.label);
   const values = weeklyData.map((d) => d.hours);
 

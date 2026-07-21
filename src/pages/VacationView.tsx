@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Header } from "../components/layout/Header";
 import { useSpecialDaysStore } from "../store/useSpecialDaysStore";
 import { useSettingsStore } from "../store/useSettingsStore";
+import { useActivityStore } from "../store/useActivityStore";
 import { getEntriesForYear } from "../lib/db";
-import { calculateBalance } from "../lib/calculations";
+import { cumulativeBalance, dailyTarget, periodForDate } from "../lib/calculations";
 import { getDayName, formatDisplayDate } from "../lib/dateUtils";
 import { formatDecimalHours, formatBalance } from "../lib/formatting";
 import type { TimeEntry } from "../types/entry";
@@ -16,8 +17,8 @@ export function VacationView() {
   const setType = useSpecialDaysStore((s) => s.setType);
   const remove = useSpecialDaysStore((s) => s.remove);
   const allocation = useSettingsStore((s) => s.settings.vacation_days_per_year);
-  const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
-  const expectedHoursPerDay = expectedHoursPerWeek / 5;
+  const reference = useSettingsStore((s) => s.settings.reference_hours_per_week);
+  const periods = useActivityStore((s) => s.periods);
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -45,15 +46,21 @@ export function VacationView() {
   // Only paid leave is drawn from the annual allocation; recovery days are paid
   // out of overtime instead.
   const taken = vacationsForYear.filter((v) => v.type === "paid").length;
-  const overtimeDays = vacationsForYear.filter((v) => v.type === "overtime").length;
-  const overtimeHours = overtimeDays * expectedHoursPerDay;
+  const overtimeList = vacationsForYear.filter((v) => v.type === "overtime");
+  const overtimeDays = overtimeList.length;
+  // Each recovery day is worth its own date's daily target (the rate can differ
+  // across the year), so sum per day rather than multiplying a single figure.
+  const overtimeHours = overtimeList.reduce(
+    (sum, v) => sum + dailyTarget(reference, periodForDate(periods, v.date)),
+    0
+  );
   const remaining = Math.max(0, allocation - taken);
   const progressPct = allocation > 0 ? Math.min(100, (taken / allocation) * 100) : 0;
 
   // Remaining overtime balance after the recovery days already booked this year.
   const overtimeBalance = useMemo(
-    () => calculateBalance(entries, expectedHoursPerDay, specialDaysForYear),
-    [entries, specialDaysForYear, expectedHoursPerDay]
+    () => cumulativeBalance(entries, specialDaysForYear, reference, periods),
+    [entries, specialDaysForYear, reference, periods]
   );
 
   return (

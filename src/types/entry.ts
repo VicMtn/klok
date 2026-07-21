@@ -26,6 +26,16 @@ export interface SpecialDay {
   label?: string | null;
 }
 
+// A dated slice of the activity schedule. Runs from `effective_from` (inclusive)
+// until the day before the next period's `effective_from`. The target hours for a
+// date are derived from the global reference_hours_per_week and the applicable
+// period: weekly = reference × activity_rate, daily = weekly / worked_days_per_week.
+export interface ActivityPeriod {
+  effective_from: string;        // 'YYYY-MM-DD', inclusive
+  activity_rate: number;         // fraction 0..1
+  worked_days_per_week: number;  // 1..7
+}
+
 export interface DayCalculation {
   gross: number;
   breakDuration: number;

@@ -1,19 +1,14 @@
-import { calculateTotalWithCredits, calculateBalance } from "../../lib/calculations";
 import { formatDecimalHours, formatBalance } from "../../lib/formatting";
 import { useT } from "../../i18n";
-import type { TimeEntry, SpecialDay } from "../../types/entry";
 
 interface Props {
-  entries: TimeEntry[];
-  specialDays?: SpecialDay[];
-  expectedHoursPerDay: number;
+  total: number;
+  balance: number;
   colSpan?: number;
 }
 
-export function TotalsRow({ entries, specialDays = [], expectedHoursPerDay, colSpan = 5 }: Props) {
+export function TotalsRow({ total, balance, colSpan = 5 }: Props) {
   const t = useT();
-  const total = calculateTotalWithCredits(entries, expectedHoursPerDay, specialDays);
-  const balance = calculateBalance(entries, expectedHoursPerDay, specialDays);
 
   return (
     <tr className="bg-gray-50 dark:bg-gray-800/60 border-t-2 border-gray-200 dark:border-gray-700">

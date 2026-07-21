@@ -9,6 +9,7 @@ import { VacationView } from "./pages/VacationView";
 import { PrintView } from "./components/print/PrintView";
 import { ToastContainer } from "./components/ui/Toast";
 import { useSettingsStore } from "./store/useSettingsStore";
+import { useActivityStore } from "./store/useActivityStore";
 import { useBadgeStore } from "./store/useBadgeStore";
 import { useLocaleStore } from "./store/useLocaleStore";
 import { getT } from "./i18n";
@@ -18,6 +19,7 @@ type Page = "week" | "month" | "vacation" | "stats";
 
 function App() {
   const load = useSettingsStore((s) => s.load);
+  const loadActivity = useActivityStore((s) => s.load);
   const badgeState = useBadgeStore((s) => s.state);
   const locale = useLocaleStore((s) => s.locale);
   const [page, setPage] = useState<Page>("week");
@@ -34,6 +36,7 @@ function App() {
   // Init settings + schedule a single wake-up at midnight instead of polling
   useEffect(() => {
     load();
+    loadActivity();
 
     let timer: ReturnType<typeof setTimeout>;
     const scheduleMidnightReset = () => {

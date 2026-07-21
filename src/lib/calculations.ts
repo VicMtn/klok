@@ -1,5 +1,8 @@
-import type { TimeEntry, DayCalculation, SpecialDay } from "../types/entry";
+import type { TimeEntry, DayCalculation, SpecialDay, ActivityPeriod } from "../types/entry";
 import { timeToMinutes } from "./formatting";
+import { getISOWeek } from "./dateUtils";
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export function calculateDay(entry: TimeEntry): DayCalculation {
   const arrival = entry.arrival ? timeToMinutes(entry.arrival) : null;
@@ -18,7 +21,7 @@ export function calculateDay(entry: TimeEntry): DayCalculation {
 
   const gross = departure - arrival;
   const net = Math.max(0, gross - breakDuration);
-  const netDecimal = Math.round((net / 60) * 100) / 100;
+  const netDecimal = round2(net / 60);
 
   return { gross, breakDuration, net, netDecimal, isComplete: true };
 }
@@ -27,34 +30,105 @@ export function calculateTotal(entries: TimeEntry[]): number {
   return entries.reduce((sum, e) => sum + calculateDay(e).netDecimal, 0);
 }
 
-export function calculateBalance(
-  entries: TimeEntry[],
-  expectedHoursPerDay: number,
-  specialDays: SpecialDay[] = []
-): number {
-  const skipDates = new Set(specialDays.map((s) => s.date));
-  const workEntries = entries.filter((e) => !skipDates.has(e.date));
-  const workedDays = workEntries.filter((e) => calculateDay(e).isComplete).length;
-  // Overtime-recovery days are paid out of the accumulated balance: each one
-  // counts as an expected day with no hours worked, so it spends a day's worth
-  // of overtime. Holiday / paid / sick days are neutral to the balance.
-  const overtimeDays = specialDays.filter((s) => s.type === "overtime").length;
-  const expected = (workedDays + overtimeDays) * expectedHoursPerDay;
-  const actual = calculateTotal(workEntries);
-  return Math.round((actual - expected) * 100) / 100;
+// --- Activity-period resolution -------------------------------------------------
+// The 100% reference is a single global figure (reference hours per week). Each
+// dated period scales it: weekly target = reference × activity_rate, daily target
+// = weekly / worked_days_per_week. Two people at the same rate can pick different
+// worked_days_per_week, so the daily target is never derived from the rate alone.
+
+// Applicable period for a date: the latest one whose effective_from <= date. Dates
+// before the earliest period fall back to that earliest period. Assumes `periods`
+// is sorted ascending by effective_from (as returned by getActivityPeriods).
+export function periodForDate(
+  periods: ActivityPeriod[],
+  date: string
+): ActivityPeriod | null {
+  if (periods.length === 0) return null;
+  let match = periods[0];
+  for (const p of periods) {
+    if (p.effective_from <= date) match = p;
+    else break;
+  }
+  return match;
 }
 
-export function calculateTotalWithCredits(
+export function dailyTarget(reference: number, period: ActivityPeriod | null): number {
+  if (!period || period.worked_days_per_week <= 0) return 0;
+  return round2((reference * period.activity_rate) / period.worked_days_per_week);
+}
+
+export function weeklyTarget(reference: number, period: ActivityPeriod | null): number {
+  if (!period) return 0;
+  return round2(reference * period.activity_rate);
+}
+
+// Worked hours (excluding special-day dates) plus the credited hours of every
+// holiday / paid / sick day — each credited at its own date's daily target.
+// Overtime-recovery days credit nothing: those hours were pointed (and counted)
+// earlier and are being spent here.
+export function totalWithCredits(
   entries: TimeEntry[],
-  expectedHoursPerDay: number,
-  specialDays: SpecialDay[] = []
+  specialDays: SpecialDay[],
+  reference: number,
+  periods: ActivityPeriod[]
 ): number {
   const skipDates = new Set(specialDays.map((s) => s.date));
-  const workEntries = entries.filter((e) => !skipDates.has(e.date));
-  const worked = calculateTotal(workEntries);
-  // Holiday, paid and sick days credit a day's worth of hours. Overtime-recovery
-  // days don't: those hours were already worked (and counted) earlier.
-  const creditedDays = specialDays.filter((s) => s.type !== "overtime").length;
-  const extraHours = creditedDays * expectedHoursPerDay;
-  return Math.round((worked + extraHours) * 100) / 100;
+  const worked = calculateTotal(entries.filter((e) => !skipDates.has(e.date)));
+  const credited = specialDays
+    .filter((s) => s.type !== "overtime")
+    .reduce((sum, s) => sum + dailyTarget(reference, periodForDate(periods, s.date)), 0);
+  return round2(worked + credited);
+}
+
+// ISO year+week key, e.g. "2026-W29", used to bucket days into weeks.
+function weekKey(date: string): string {
+  const { year, week } = getISOWeek(new Date(date + "T00:00:00"));
+  return `${year}-W${String(week).padStart(2, "0")}`;
+}
+
+// An ISO week is "active" once it holds at least one complete worked day or one
+// special day. Each active week owes exactly one weekly target (resolved from the
+// earliest dated day of that week). Fully empty weeks are never charged, so gaps —
+// before the app was used, or weeks entirely off-grid — don't distort the balance.
+function sumActiveWeekTargets(
+  entries: TimeEntry[],
+  specialDays: SpecialDay[],
+  reference: number,
+  periods: ActivityPeriod[]
+): number {
+  const weekRep = new Map<string, string>(); // week key -> earliest date seen
+  const note = (date: string) => {
+    const key = weekKey(date);
+    const cur = weekRep.get(key);
+    if (cur === undefined || date < cur) weekRep.set(key, date);
+  };
+
+  const skipDates = new Set(specialDays.map((s) => s.date));
+  for (const e of entries) {
+    if (skipDates.has(e.date)) continue;
+    if (calculateDay(e).isComplete) note(e.date);
+  }
+  for (const s of specialDays) note(s.date);
+
+  let sum = 0;
+  for (const date of weekRep.values()) {
+    sum += weeklyTarget(reference, periodForDate(periods, date));
+  }
+  return round2(sum);
+}
+
+// Cumulative balance = credited hours − the sum of every active week's target.
+// Applied to a single ISO week (week view) this charges exactly one weekly target;
+// applied to a month or a year it accumulates the per-week deviations. A week where
+// more days than scheduled are pointed shows overtime; a week short of its target
+// (with no special day covering the gap) shows a deficit — the strict weekly model.
+export function cumulativeBalance(
+  entries: TimeEntry[],
+  specialDays: SpecialDay[],
+  reference: number,
+  periods: ActivityPeriod[]
+): number {
+  const total = totalWithCredits(entries, specialDays, reference, periods);
+  const target = sumActiveWeekTargets(entries, specialDays, reference, periods);
+  return round2(total - target);
 }

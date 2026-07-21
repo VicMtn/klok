@@ -6,19 +6,21 @@ import { DayTotal } from "./DayTotal";
 import { ConfirmModal } from "../ui/ConfirmModal";
 import { validateEntrySequence } from "../../lib/validation";
 import { getDayName, formatDisplayDate, today } from "../../lib/dateUtils";
-import { calculateDay } from "../../lib/calculations";
+import { calculateDay, dailyTarget, periodForDate } from "../../lib/calculations";
 import { formatDecimalHours } from "../../lib/formatting";
 import type { TimeEntry } from "../../types/entry";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { useActivityStore } from "../../store/useActivityStore";
 import { useSpecialDaysStore } from "../../store/useSpecialDaysStore";
 import { useT } from "../../i18n";
 
 export function DayRow({ date }: { date: string }) {
   const entry = useEntriesStore((s) => s.entries.get(date));
   const updateField = useEntriesStore((s) => s.updateField);
-  const expectedHoursPerWeek = useSettingsStore((s) => s.settings.expected_hours_per_week);
-  const expectedHours = expectedHoursPerWeek / 5;
+  const reference = useSettingsStore((s) => s.settings.reference_hours_per_week);
+  const periods = useActivityStore((s) => s.periods);
+  const expectedHours = dailyTarget(reference, periodForDate(periods, date));
   const special = useSpecialDaysStore((s) => s.specialDays.get(date));
   const setType = useSpecialDaysStore((s) => s.setType);
   const updateLabel = useSpecialDaysStore((s) => s.updateLabel);

@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { TimeEntry, SpecialDay, SpecialDayType } from "../types/entry";
+import type { TimeEntry, SpecialDay, SpecialDayType, ActivityPeriod } from "../types/entry";
 
 let _db: Database | null = null;
 
@@ -80,6 +80,31 @@ export async function deleteSpecialDay(date: string): Promise<void> {
   await (await db()).execute(
     "DELETE FROM special_days WHERE date = $1",
     [date]
+  );
+}
+
+export async function getActivityPeriods(): Promise<ActivityPeriod[]> {
+  return (await db()).select<ActivityPeriod[]>(
+    "SELECT effective_from, activity_rate, worked_days_per_week FROM activity_periods ORDER BY effective_from"
+  );
+}
+
+export async function upsertActivityPeriod(
+  effectiveFrom: string,
+  activityRate: number,
+  workedDaysPerWeek: number
+): Promise<void> {
+  await (await db()).execute(
+    `INSERT INTO activity_periods (effective_from, activity_rate, worked_days_per_week) VALUES ($1, $2, $3)
+     ON CONFLICT(effective_from) DO UPDATE SET activity_rate = $2, worked_days_per_week = $3`,
+    [effectiveFrom, activityRate, workedDaysPerWeek]
+  );
+}
+
+export async function deleteActivityPeriod(effectiveFrom: string): Promise<void> {
+  await (await db()).execute(
+    "DELETE FROM activity_periods WHERE effective_from = $1",
+    [effectiveFrom]
   );
 }
 

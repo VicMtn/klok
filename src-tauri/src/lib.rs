@@ -117,6 +117,12 @@ pub fn run() {
             sql: include_str!("../migrations/008_special_days_table.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 9,
+            description: "activity_periods",
+            sql: include_str!("../migrations/009_activity_periods.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

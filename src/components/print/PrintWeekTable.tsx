@@ -1,26 +1,30 @@
 import {
   calculateDay,
   calculateTotal,
-  calculateBalance,
-  calculateTotalWithCredits,
+  cumulativeBalance,
+  totalWithCredits,
+  dailyTarget,
+  periodForDate,
 } from "../../lib/calculations";
 import { formatDecimalHours, formatBalance, minutesToTime } from "../../lib/formatting";
 import { getDayName, formatDisplayDate } from "../../lib/dateUtils";
 import { useT } from "../../i18n";
-import type { TimeEntry, SpecialDay } from "../../types/entry";
+import type { TimeEntry, SpecialDay, ActivityPeriod } from "../../types/entry";
 
 interface Props {
   dates: string[];
   entries: Map<string, TimeEntry>;
   specialDays: Map<string, SpecialDay>;
-  expectedHoursPerDay: number;
+  reference: number;
+  periods: ActivityPeriod[];
 }
 
 export function PrintWeekTable({
   dates,
   entries,
   specialDays,
-  expectedHoursPerDay,
+  reference,
+  periods,
 }: Props) {
   const t = useT();
 
@@ -32,8 +36,8 @@ export function PrintWeekTable({
   // Worked-only sum drives the "empty printout" guard; the displayed total and
   // balance use the same credited-hours logic as the on-screen totals row.
   const workedTotal = calculateTotal(visibleEntries);
-  const total = calculateTotalWithCredits(visibleEntries, expectedHoursPerDay, specialList);
-  const balance = calculateBalance(visibleEntries, expectedHoursPerDay, specialList);
+  const total = totalWithCredits(visibleEntries, specialList, reference, periods);
+  const balance = cumulativeBalance(visibleEntries, specialList, reference, periods);
   // Show the footer whenever the period carries meaning: real worked hours, or
   // any special day (an all-overtime week credits 0h yet still owes a balance).
   const hasContent = workedTotal > 0 || specialList.length > 0;
@@ -41,21 +45,22 @@ export function PrintWeekTable({
   const specialFor = (date: string) => {
     const special = specialDays.get(date);
     if (!special) return null;
+    const hours = dailyTarget(reference, periodForDate(periods, date));
     switch (special.type) {
       case "holiday":
         return {
           label: special.label ? `${t.entry.holiday} — ${special.label}` : t.entry.holiday,
-          hours: expectedHoursPerDay,
+          hours,
           sign: "",
         };
       case "overtime":
         // Overtime recovery reads as a minus: it spends accumulated overtime
         // rather than crediting the period, exactly like the on-screen row.
-        return { label: t.entry.overtime, hours: expectedHoursPerDay, sign: "-" };
+        return { label: t.entry.overtime, hours, sign: "-" };
       case "sick":
-        return { label: t.entry.sick, hours: expectedHoursPerDay, sign: "" };
+        return { label: t.entry.sick, hours, sign: "" };
       default:
-        return { label: t.entry.vacation, hours: expectedHoursPerDay, sign: "" };
+        return { label: t.entry.vacation, hours, sign: "" };
     }
   };
 

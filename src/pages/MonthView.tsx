@@ -6,7 +6,7 @@ import { useEntriesStore } from "../store/useEntriesStore";
 import { useBadgeStore } from "../store/useBadgeStore";
 import { usePrintStore } from "../store/usePrintStore";
 import { useSpecialDaysStore } from "../store/useSpecialDaysStore";
-import { getMonthDates, today } from "../lib/dateUtils";
+import { getMonthDates, today, addDays } from "../lib/dateUtils";
 import { useT } from "../i18n";
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
 
 export function MonthView({ year, month, onNavigate }: Props) {
   const t = useT();
-  const loadMonth = useEntriesStore((s) => s.loadMonth);
+  const loadRange = useEntriesStore((s) => s.loadWeek);
   const hydrate = useBadgeStore((s) => s.hydrate);
   const setPrint = usePrintStore((s) => s.setPrint);
   const loadSpecialDaysRange = useSpecialDaysStore((s) => s.loadRange);
@@ -37,12 +37,16 @@ export function MonthView({ year, month, onNavigate }: Props) {
     todayInView ? s.entries.get(todayDate) : undefined
   );
 
-  // Load entries when navigation changes
+  // Load entries when navigation changes. The range is padded forward to the
+  // Sunday of the last week so the balance can account for whole ISO weeks that
+  // spill past the month end (MonthTable only counts weeks whose Monday is in-month).
   useEffect(() => {
-    loadMonth(year, month).then(() => {
+    const start = dates[0];
+    const paddedEnd = addDays(dates[dates.length - 1], 6);
+    loadRange(start, paddedEnd).then(() => {
       if (todayInView) hydrate(useEntriesStore.getState().entries.get(todayDate));
     });
-    loadSpecialDaysRange(dates[0], dates[dates.length - 1]);
+    loadSpecialDaysRange(start, paddedEnd);
     setPrint(dates, title);
   }, [year, month]);
 

@@ -3,17 +3,18 @@ import { DayRow } from "../entry/DayRow";
 import { TotalsRow } from "./TotalsRow";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { useActivityStore } from "../../store/useActivityStore";
 import { useSpecialDaysStore } from "../../store/useSpecialDaysStore";
+import { totalWithCredits, cumulativeBalance } from "../../lib/calculations";
+import { isoWeekMonday } from "../../lib/dateUtils";
 import { useT } from "../../i18n";
-import type { TimeEntry, SpecialDay } from "../../types/entry";
 
 export function MonthTable({ dates }: { dates: string[] }) {
   const t = useT();
   const entriesMap = useEntriesStore((s) => s.entries);
   const specialDaysMap = useSpecialDaysStore((s) => s.specialDays);
-  const expectedHoursPerDay = useSettingsStore(
-    (s) => s.settings.expected_hours_per_week / 5
-  );
+  const reference = useSettingsStore((s) => s.settings.reference_hours_per_week);
+  const periods = useActivityStore((s) => s.periods);
 
   const headers: { label: string; align: string }[] = [
     { label: t.table.day,           align: "text-left"   },
@@ -27,15 +28,28 @@ export function MonthTable({ dates }: { dates: string[] }) {
     { label: t.table.note,          align: "text-left"   },
   ];
 
-  const entries = useMemo(
-    () => dates.map((d) => entriesMap.get(d)).filter((e): e is TimeEntry => e !== undefined),
-    [entriesMap, dates]
+  // Balance/total are computed over whole ISO weeks that *belong* to this month —
+  // those whose Monday falls within the month — so a week straddling a month edge
+  // is charged its full weekly target in exactly one month, never half-charged in
+  // two. MonthView loads the padded range that covers these weeks.
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  const ownsWeek = (date: string) => {
+    const monday = isoWeekMonday(date);
+    return monday >= first && monday <= last;
+  };
+
+  const ownedEntries = useMemo(
+    () => Array.from(entriesMap.values()).filter((e) => ownsWeek(e.date)),
+    [entriesMap, first, last]
+  );
+  const ownedSpecials = useMemo(
+    () => Array.from(specialDaysMap.values()).filter((s) => ownsWeek(s.date)),
+    [specialDaysMap, first, last]
   );
 
-  const specialDays = useMemo(
-    () => dates.map((d) => specialDaysMap.get(d)).filter((s): s is SpecialDay => s !== undefined),
-    [specialDaysMap, dates]
-  );
+  const total = totalWithCredits(ownedEntries, ownedSpecials, reference, periods);
+  const balance = cumulativeBalance(ownedEntries, ownedSpecials, reference, periods);
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
@@ -58,12 +72,7 @@ export function MonthTable({ dates }: { dates: string[] }) {
           ))}
         </tbody>
         <tfoot>
-          <TotalsRow
-            entries={entries}
-            specialDays={specialDays}
-            expectedHoursPerDay={expectedHoursPerDay}
-            colSpan={6}
-          />
+          <TotalsRow total={total} balance={balance} colSpan={6} />
         </tfoot>
       </table>
     </div>

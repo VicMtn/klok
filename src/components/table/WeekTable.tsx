@@ -3,7 +3,9 @@ import { DayRow } from "../entry/DayRow";
 import { TotalsRow } from "./TotalsRow";
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { useActivityStore } from "../../store/useActivityStore";
 import { useSpecialDaysStore } from "../../store/useSpecialDaysStore";
+import { totalWithCredits, cumulativeBalance } from "../../lib/calculations";
 import { useT } from "../../i18n";
 import type { TimeEntry, SpecialDay } from "../../types/entry";
 
@@ -11,9 +13,8 @@ export function WeekTable({ dates }: { dates: string[] }) {
   const t = useT();
   const entriesMap = useEntriesStore((s) => s.entries);
   const specialDaysMap = useSpecialDaysStore((s) => s.specialDays);
-  const expectedHoursPerDay = useSettingsStore(
-    (s) => s.settings.expected_hours_per_week / 5
-  );
+  const reference = useSettingsStore((s) => s.settings.reference_hours_per_week);
+  const periods = useActivityStore((s) => s.periods);
 
   const headers: { label: string; align: string }[] = [
     { label: t.table.day,           align: "text-left"   },
@@ -37,6 +38,11 @@ export function WeekTable({ dates }: { dates: string[] }) {
     [specialDaysMap, dates]
   );
 
+  // A displayed week is exactly one ISO week, so the cumulative balance charges
+  // exactly one weekly target for it.
+  const total = totalWithCredits(entries, specialDays, reference, periods);
+  const balance = cumulativeBalance(entries, specialDays, reference, periods);
+
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
       <table className="w-full text-left border-collapse">
@@ -58,12 +64,7 @@ export function WeekTable({ dates }: { dates: string[] }) {
           ))}
         </tbody>
         <tfoot>
-          <TotalsRow
-            entries={entries}
-            specialDays={specialDays}
-            expectedHoursPerDay={expectedHoursPerDay}
-            colSpan={6}
-          />
+          <TotalsRow total={total} balance={balance} colSpan={6} />
         </tfoot>
       </table>
     </div>

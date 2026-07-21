@@ -1,5 +1,6 @@
 import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { useActivityStore } from "../../store/useActivityStore";
 import { usePrintStore } from "../../store/usePrintStore";
 import { useSpecialDaysStore } from "../../store/useSpecialDaysStore";
 import { PrintWeekTable } from "./PrintWeekTable";
@@ -9,9 +10,8 @@ export function PrintView() {
   const t = useT();
   const entries = useEntriesStore((s) => s.entries);
   const specialDays = useSpecialDaysStore((s) => s.specialDays);
-  const expectedHoursPerDay = useSettingsStore(
-    (s) => s.settings.expected_hours_per_week / 5
-  );
+  const reference = useSettingsStore((s) => s.settings.reference_hours_per_week);
+  const periods = useActivityStore((s) => s.periods);
   const { dates, title } = usePrintStore();
 
   // Always rendered so #print-view is always in the DOM.
@@ -28,7 +28,8 @@ export function PrintView() {
             dates={dates}
             entries={entries}
             specialDays={specialDays}
-            expectedHoursPerDay={expectedHoursPerDay}
+            reference={reference}
+            periods={periods}
           />
         </>
       )}
