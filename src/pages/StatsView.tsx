@@ -6,7 +6,7 @@ import { getEntriesForYear, getSpecialDaysForYear } from "../lib/db";
 import {
   calculateDay,
   totalWithCredits,
-  cumulativeBalance,
+  partialBalance,
   dailyTarget,
   weeklyTarget,
   periodForDate,
@@ -94,7 +94,7 @@ export function StatsView() {
   );
 
   const balance = useMemo(
-    () => cumulativeBalance(entries, specialDays, reference, periods),
+    () => partialBalance(entries, specialDays, reference, periods),
     [entries, specialDays, reference, periods]
   );
 
