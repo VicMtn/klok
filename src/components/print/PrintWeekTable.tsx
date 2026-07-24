@@ -1,7 +1,7 @@
 import {
   calculateDay,
   calculateTotal,
-  cumulativeBalance,
+  partialBalance,
   totalWithCredits,
   dailyTarget,
   periodForDate,
@@ -37,7 +37,7 @@ export function PrintWeekTable({
   // balance use the same credited-hours logic as the on-screen totals row.
   const workedTotal = calculateTotal(visibleEntries);
   const total = totalWithCredits(visibleEntries, specialList, reference, periods);
-  const balance = cumulativeBalance(visibleEntries, specialList, reference, periods);
+  const balance = partialBalance(visibleEntries, specialList, reference, periods);
   // Show the footer whenever the period carries meaning: real worked hours, or
   // any special day (an all-overtime week credits 0h yet still owes a balance).
   const hasContent = workedTotal > 0 || specialList.length > 0;
