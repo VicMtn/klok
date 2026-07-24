@@ -5,7 +5,7 @@ import { useEntriesStore } from "../../store/useEntriesStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useActivityStore } from "../../store/useActivityStore";
 import { useSpecialDaysStore } from "../../store/useSpecialDaysStore";
-import { totalWithCredits, cumulativeBalance } from "../../lib/calculations";
+import { totalWithCredits, partialBalance } from "../../lib/calculations";
 import { useT } from "../../i18n";
 import type { TimeEntry, SpecialDay } from "../../types/entry";
 
@@ -38,10 +38,8 @@ export function WeekTable({ dates }: { dates: string[] }) {
     [specialDaysMap, dates]
   );
 
-  // A displayed week is exactly one ISO week, so the cumulative balance charges
-  // exactly one weekly target for it.
   const total = totalWithCredits(entries, specialDays, reference, periods);
-  const balance = cumulativeBalance(entries, specialDays, reference, periods);
+  const balance = partialBalance(entries, specialDays, reference, periods);
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">

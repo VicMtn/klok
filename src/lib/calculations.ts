@@ -117,6 +117,26 @@ function sumActiveWeekTargets(
   return round2(sum);
 }
 
+// Per-day balance: compares worked hours against the daily target for each
+// completed day only. Avoids the mid-week negative caused by charging a full
+// weekly target when only part of the week is done.
+export function partialBalance(
+  entries: TimeEntry[],
+  specialDays: SpecialDay[],
+  reference: number,
+  periods: ActivityPeriod[]
+): number {
+  const skipDates = new Set(specialDays.map((s) => s.date));
+  const workedTarget = entries
+    .filter((e) => !skipDates.has(e.date) && calculateDay(e).isComplete)
+    .reduce((sum, e) => sum + dailyTarget(reference, periodForDate(periods, e.date)), 0);
+  const specialTarget = specialDays
+    .filter((s) => s.type !== "overtime")
+    .reduce((sum, s) => sum + dailyTarget(reference, periodForDate(periods, s.date)), 0);
+  const total = totalWithCredits(entries, specialDays, reference, periods);
+  return round2(total - workedTarget - specialTarget);
+}
+
 // Cumulative balance = credited hours − the sum of every active week's target.
 // Applied to a single ISO week (week view) this charges exactly one weekly target;
 // applied to a month or a year it accumulates the per-week deviations. A week where
